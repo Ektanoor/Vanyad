@@ -16,7 +16,6 @@
 
 import time
 import pipes
-import netsnmp
 import livestatus
 from pyswip import Prolog
 from subprocess import call
@@ -51,10 +50,10 @@ class ConnectProlog(ConnectLivestatus):
 class ConnectNagCinga:
     """This class sends commands to Nagios/Icinga"""
     user=None
+    f=None
     def __init__(self):
 	config=ReadConf()
 	self.user=config.user
-	monitor_dir=config.monitor_dir
 	commandfile=config.socket_command
 	t=pipes.Template()
 	self.f=t.open(commandfile, 'w')

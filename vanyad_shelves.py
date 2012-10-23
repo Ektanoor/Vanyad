@@ -35,6 +35,8 @@ class ReadConf:
     script=None
     sms_zombies=None
 
+    contacts=[]
+
     def __init__(self):
 	config=ConfigParser.RawConfigParser()
 	config.read('vanyad.conf')
@@ -48,6 +50,12 @@ class ReadConf:
 	else: self.socket_live='unix:'+self.monitor_dir+'/rw/live'
 	if config.has_option('monitor','socket_command'): self.socket_command=config.get('monitor', 'socket_command')
 	else: self.socket_command=self.monitor_dir+'/rw/'+self.system+'.cmd'
+
+	if config.has_option('contacts','users'): 
+	    contact_string=config.get('contacts', 'users')
+	    self.contacts=contact_string.split(',')
+	else: self.user='admin'
+
 	if config.has_option('snmp','community'): self.snmp_community=config.get('snmp', 'community')
 	else: self.snmp_community='public'
 

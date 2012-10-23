@@ -24,6 +24,7 @@ class CheckHostsLogs(ConnectLivestatus):
     status=None
     blacklist=None
     go_black=1
+    config=None
     hdowns=Counter()
     hups=Counter()
     hunreachs=Counter()
@@ -35,6 +36,7 @@ class CheckHostsLogs(ConnectLivestatus):
 
     def __init__(self):
 	ConnectLivestatus.__init__(self)
+	self.config=ReadConf()
 	t_check=time.time()-self.t_lapse
 	t_stamp=str(round(t_check)).rstrip('0').rstrip('.')
         self.status=self.get_query('log',['host_name','state','state_type','type','attempt','current_host_max_check_attempts'],['time >= '+t_stamp,'class = 1'],'WaitTrigger: log')
@@ -75,10 +77,11 @@ class CheckHostsLogs(ConnectLivestatus):
 	u_list=[]
 	nope_list=[]
 	comment=''
-	contacts=('icingaadmin',)
 	jabber=ConnectJabber()
 	for host in self.hdowns: 
-	    if self.hdowns[host]>1: d_list.append(host)
+	    if self.hdowns[host]>1:
+		h_string=host+': '+str(self.hdowns[host])+' alerts'
+		d_list.append(h_string)
 	if d_list:
 	    comment='These hosts have had repeated failures during the past '+str(self.t_lapse/3600)+' hours:\n'
 	    down_string='\n'.join(d_list)
@@ -105,19 +108,20 @@ class CheckHostsLogs(ConnectLivestatus):
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
-	jabber.send(msg,contacts)
+	jabber.send(msg,self.config.contacts)
 
     def report_softstates(self):
 	d_list=[]
 	u_list=[]
 	nope_list=[]
 	comment=''
-	contacts=('icingaadmin',)
 	jabber=ConnectJabber()
 
 	top_ten=dict(self.sdowns.most_common(10))
 	for host in top_ten:
-	    if top_ten[host]>1: d_list.append(host)
+	    if top_ten[host]>1:
+		h_string=host+': '+str(self.sdowns[host])+' alerts'
+		d_list.append(h_string)
 	if d_list:
 	    comment='These hosts have had most soft failures during the past '+str(self.t_lapse/3600)+' hours:\n'
 	    down_string='\n'.join(d_list)
@@ -136,7 +140,7 @@ class CheckHostsLogs(ConnectLivestatus):
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
-	jabber.send(msg,contacts)
+	jabber.send(msg,self.config.contacts)
 
 bit=CheckHostsLogs()
 bit.states()

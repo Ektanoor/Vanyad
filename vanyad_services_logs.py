@@ -24,6 +24,7 @@ class CheckServicesLogs(vanyad_start.ConnectLivestatus):
     status=None
     blacklist=None
     go_black=1
+    config=None
     hdowns=Counter()
     hups=Counter()
     hunreachs=Counter()
@@ -35,6 +36,7 @@ class CheckServicesLogs(vanyad_start.ConnectLivestatus):
 
     def __init__(self):
 	vanyad_start.ConnectLivestatus.__init__(self)
+	self.config=ReadConf()
 	t_check=time.time()-self.t_lapse
 	t_stamp=str(round(t_check)).rstrip('0').rstrip('.')
         self.status=self.get_query('log',['host_name','service_description','state','state_type','type','attempt','current_host_max_check_attempts'],['time >= '+t_stamp,'class = 1'],'WaitTrigger: log')
@@ -76,7 +78,7 @@ class CheckServicesLogs(vanyad_start.ConnectLivestatus):
 	u_list=[]
 	nope_list=[]
 	comment=''
-	contacts=('icingaadmin',)
+	
 	jabber=vanyad_start.ConnectJabber()
 	for host in self.hdowns: 
 	    if self.hdowns[host]>1: d_list.append(host)
@@ -106,14 +108,13 @@ class CheckServicesLogs(vanyad_start.ConnectLivestatus):
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
-	jabber.send(msg,contacts)
+	jabber.send(msg,self.config.contacts)
 
     def report_softstates(self):
 	d_list=[]
 	u_list=[]
 	nope_list=[]
 	comment=''
-	contacts=('icingaadmin',)
 	jabber=vanyad_start.ConnectJabber()
 
 	top_ten=dict(self.sdowns.most_common(10))
@@ -137,7 +138,7 @@ class CheckServicesLogs(vanyad_start.ConnectLivestatus):
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
-	jabber.send(msg,contacts)
+	jabber.send(msg,self.config.contacts)
 
 
 bit=CheckServicesLogs()

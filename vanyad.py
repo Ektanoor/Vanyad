@@ -15,13 +15,10 @@
 # Boston, MA 02110-1301 USA.
 
 from vanyad_functions import *
-#from vanyad_nagcinga import *
 from vanyad_classic import *
 from vanyad_comms import *
 from vanyad_snmp import *
 from vanyad_grid import *
-
-
 
 
 class AlienNodes(TheGrid):
@@ -63,20 +60,40 @@ class PortChecks(TheGrid):
 	    paradoxes.add(para_dict['X'])
 	for paradox in paradoxes:
 	    ancestor=list(self.prolog.query("ancestor('"+paradox+"',X,P)"))
-	print(list(self.prolog.query("parent(X,'"+paradox+"')")))
-	for host in ancestor:
-	    port=host['P']
-	    snmp=SNMPCrawler(self.addresses[host['X']])
-	    snmp.identify_port(port)
-	    state=snmp.port_state()
-	    stats=snmp.port_stats()
-	    macs=snmp.port_arptable()
-	    for s in state:
-		print(s,' ',state[s])
-	    for s in stats:
-		print(s,' ',stats[s])
-	    for m in macs:
-		print(m)
+	    for host in ancestor:
+		port=host['P']
+		snmp=SNMPCrawler(self.addresses[host['X']])
+		snmp.identify_port(port)
+		state=snmp.port_state()
+		stats=snmp.port_stats()
+		macs=snmp.port_arptable()
+
+		msg='These are the port states for the closest reachable ancestors of host '+paradox+'\n'
+		msg+='Ancestor: '+host['X']+'\n'
+		msg+='Port: '+host['P']+' aka '+state['alias']+'\nState: '
+		if bool(state['admin_status']) and bool(state['oper_status']): port_state='Port is UP.'
+		elif not bool(state['admin_status']): port_state='Port is administratively DOWN!'
+		elif not bool(state['oper_status']): port_state='Port is DOWN!'
+		msg+=port_state+'\n'
+		last_change=int(state['last_change'])
+		if last_change<3600: last_change/=3600
+		else: last_change/=60
+		msg+='Last change: '+str(last_change)+'\n'
+		speed=int(state['speed'])
+		speed/=1000000
+		msg+='Statistics: '+str(speed)+'Mbps\n'
+		msg+='Ingress='+stats['ingress']+' octets\n'
+		msg+='Egress='+stats['egress']+' octets\n'
+		if macs: msg+='There are registered MACs in this port!\n'
+		else: msg+='No MACs registered on this port'
+		print(msg)
+
+#('ingress', ' ', '2312627382')
+#('in_errors', ' ', '0')
+#('in_discards', ' ', '0')
+#('egress', ' ', '4052951347')
+#('out_discards', ' ', '255440320')
+#('out_errors', ' ', '0')
 
 
 class TakeAction:

@@ -24,11 +24,12 @@ p_base=0
 class TheGrid(ConnectProlog):
     """This is the real gem of this system. We pick up all parent dependencies from Nagios/Icinga and turn them over Prolog.
     """
-    contacts=('icingaadmin',)
+    config=None
     addresses={}
     jabber=None
     blacklist=None
     def __init__(self):
+	self.config=ReadConf()
 	global p_base
 	self.jabber=ConnectJabber()
 	ConnectProlog.__init__(self)
@@ -71,7 +72,7 @@ class TheGrid(ConnectProlog):
 		warning+="!"
 		warn_lines.append(warning)
 	msg='*Vanyad*\nALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
-	self.jabber.send(msg,self.contacts)
+	self.jabber.send(msg,self.config.contacts)
 
 
     def GridParadoxes(self):
@@ -82,4 +83,4 @@ class TheGrid(ConnectProlog):
 		warning='Host '+paradox['Y']+' is UP while parent '+paradox['X']+' is DOWN/UNREACHABLE!'
 		warn_lines.append(warning)
 	msg='*Vanyad*\nALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
-	self.jabber.send(msg,self.contacts)
+	self.jabber.send(msg,self.config.contacts)
