@@ -112,7 +112,7 @@ class CheckHostsLogs(ConnectLivestatus):
 	u_list=[]
 	nope_list=[]
 	comment=''
-	contacts=('icingaadmin','rgubaidullin')
+	contacts=('icingaadmin',)
 	jabber=ConnectJabber()
 
 	top_ten=dict(self.sdowns.most_common(10))

@@ -113,7 +113,7 @@ class CheckServicesLogs(vanyad_start.ConnectLivestatus):
 	u_list=[]
 	nope_list=[]
 	comment=''
-	contacts=('icingaadmin','rgubaidullin')
+	contacts=('icingaadmin',)
 	jabber=vanyad_start.ConnectJabber()
 
 	top_ten=dict(self.sdowns.most_common(10))
