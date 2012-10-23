@@ -15,11 +15,11 @@
 # Boston, MA 02110-1301 USA.
 
 import time
-import vanyad_start
+from vanyad import *
 from collections import Counter
 
 
-class CheckHostsLogs(vanyad_start.ConnectLivestatus):
+class CheckHostsLogs(ConnectLivestatus):
     t_lapse=86400
     status=None
     blacklist=None
@@ -34,11 +34,11 @@ class CheckHostsLogs(vanyad_start.ConnectLivestatus):
     scommon_states=Counter()
 
     def __init__(self):
-	vanyad_start.ConnectLivestatus.__init__(self)
+	ConnectLivestatus.__init__(self)
 	t_check=time.time()-self.t_lapse
 	t_stamp=str(round(t_check)).rstrip('0').rstrip('.')
         self.status=self.get_query('log',['host_name','state','state_type','type','attempt','current_host_max_check_attempts'],['time >= '+t_stamp,'class = 1'],'WaitTrigger: log')
-        if self.go_black: self.blacklist=vanyad_start.OpenShelves('blacklist')
+        if self.go_black: self.blacklist=OpenShelves('blacklist')
 
     def states(self):
 	host_alert='HOST ALERT'
@@ -76,7 +76,7 @@ class CheckHostsLogs(vanyad_start.ConnectLivestatus):
 	nope_list=[]
 	comment=''
 	contacts=('icingaadmin',)
-	jabber=vanyad_start.ConnectJabber()
+	jabber=ConnectJabber()
 	for host in self.hdowns: 
 	    if self.hdowns[host]>1: d_list.append(host)
 	if d_list:
@@ -101,7 +101,7 @@ class CheckHostsLogs(vanyad_start.ConnectLivestatus):
 	    comment+=nope_string
 
 
-	msg='*Icinga-Vanyad*\nALERT - HOSTS WITH REPEATED FAILURES\n'+ \
+	msg='*Vanyad*\nALERT - HOSTS WITH REPEATED FAILURES\n'+ \
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
@@ -113,7 +113,7 @@ class CheckHostsLogs(vanyad_start.ConnectLivestatus):
 	nope_list=[]
 	comment=''
 	contacts=('icingaadmin','rgubaidullin')
-	jabber=vanyad_start.ConnectJabber()
+	jabber=ConnectJabber()
 
 	top_ten=dict(self.sdowns.most_common(10))
 	for host in top_ten:
@@ -132,7 +132,7 @@ class CheckHostsLogs(vanyad_start.ConnectLivestatus):
 	    comment+=unreach_string+'\n\n'
 
 
-	msg='*Icinga-Vanyad*\nALERT - HOSTS WITH POSSIBLE FAILURES\n'+ \
+	msg='*Vanyad*\nALERT - HOSTS WITH POSSIBLE FAILURES\n'+ \
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 

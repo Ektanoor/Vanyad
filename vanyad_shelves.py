@@ -26,6 +26,15 @@ class ReadConf:
     socket_command=None
     snmp_community=None
 
+    address=None
+    xmpp_server=None
+    xmpp_user=None
+    xmpp_passwd=None
+
+    check_smsd=None
+    script=None
+    sms_zombies=None
+
     def __init__(self):
 	config=ConfigParser.RawConfigParser()
 	config.read('vanyad.conf')
@@ -42,6 +51,23 @@ class ReadConf:
 	if config.has_option('snmp','community'): self.snmp_community=config.get('snmp', 'community')
 	else: self.snmp_community='public'
 
+	if config.has_option('jabber','address'): self.address=config.get('jabber', 'address')
+	else: self.address='address1'
+
+	if config.has_option('jabber','xmpp_server'): self.xmpp_server=config.get('jabber', 'xmpp_server')
+	else: raise NoOptions('Jabber server not specified')
+	if config.has_option('jabber','xmpp_user'): self.xmpp_user=config.get('jabber', 'xmpp_user')
+	else: raise NoOptions('Jabber user not specified')
+	if config.has_option('jabber','xmpp_passwd'): self.xmpp_passwd=config.get('jabber', 'xmpp_passwd')
+	else: raise NoOptions('Jabber password not specified')
+
+	if config.has_option('sms','check_smsd'): self.check_smsd=config.get('sms', 'check_smsd')
+	else: self.check_smsd=0
+	if config.has_option('sms','script'): self.script=config.get('sms', 'script')
+	else: self.script='/usr/bin/sendsms'
+
+	if config.has_option('sms','sms_zombies'): self.sms_zombies=config.get('sms', 'sms_zombies')
+	else: raise NoOptions('SMS Zombies service check not defined')
 
 
 class OpenShelves:

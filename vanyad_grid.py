@@ -24,7 +24,7 @@ p_base=0
 class TheGrid(ConnectProlog):
     """This is the real gem of this system. We pick up all parent dependencies from Nagios/Icinga and turn them over Prolog.
     """
-    contacts=('icingaadmin')
+    contacts=('icingaadmin',)
     addresses={}
     jabber=None
     blacklist=None
@@ -70,7 +70,7 @@ class TheGrid(ConnectProlog):
 		if blocks>0: warning+=" and blocking "+str(blocks)+" nodes"
 		warning+="!"
 		warn_lines.append(warning)
-	msg='*Icinga-Vanyad*\nALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
+	msg='*Vanyad*\nALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 	self.jabber.send(msg,self.contacts)
 
 
@@ -81,5 +81,5 @@ class TheGrid(ConnectProlog):
 	    if paradox['X'] not in self.blacklist.lsts:
 		warning='Host '+paradox['Y']+' is UP while parent '+paradox['X']+' is DOWN/UNREACHABLE!'
 		warn_lines.append(warning)
-	msg='*Icinga-Vanyad*\nALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
+	msg='*Vanyad*\nALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 	self.jabber.send(msg,self.contacts)

@@ -102,7 +102,7 @@ class CheckServicesLogs(vanyad_start.ConnectLivestatus):
 	    comment+=nope_string
 
 
-	msg='*Icinga-Vanyad*\nALERT - HOSTS WITH REPEATED FAILURES\n'+ \
+	msg='*Vanyad*\nALERT - HOSTS WITH REPEATED FAILURES\n'+ \
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
@@ -133,7 +133,7 @@ class CheckServicesLogs(vanyad_start.ConnectLivestatus):
 	    comment+=unreach_string+'\n\n'
 
 
-	msg='*Icinga-Vanyad*\nALERT - HOSTS WITH POSSIBLE FAILURES\n'+ \
+	msg='*Vanyad*\nALERT - HOSTS WITH POSSIBLE FAILURES\n'+ \
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
