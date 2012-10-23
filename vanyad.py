@@ -55,46 +55,52 @@ class PortChecks(TheGrid):
 
     def show_state(self):
 	paradoxes=set()
+	ancestors=set()
+	warn_lines=[]
 	paradox_list=list(self.prolog.query("paradoxes(X,Y)"))
 	for para_dict in paradox_list:
 	    paradoxes.add(para_dict['X'])
 	for paradox in paradoxes:
 	    ancestor=list(self.prolog.query("ancestor('"+paradox+"',X,P)"))
 	    for host in ancestor:
-		port=host['P']
-		snmp=SNMPCrawler(self.addresses[host['X']])
-		snmp.identify_port(port)
-		state=snmp.port_state()
-		stats=snmp.port_stats()
-		macs=snmp.port_arptable()
+		if host['X'] not in ancestors:
+		    ancestors.add(host['X'])
+		    port=host['P']
+		    snmp=SNMPCrawler(self.addresses[host['X']])
+		    snmp.identify_port(port)
+		    state=snmp.port_state()
+		    stats=snmp.port_stats()
+		    macs=snmp.port_arptable()
+		    print(state)
 
-		msg='These are the port states for the closest reachable ancestors of host '+paradox+'\n'
-		msg+='Ancestor: '+host['X']+'\n'
-		msg+='Port: '+host['P']+' aka '+state['alias']+'\nState: '
-		if bool(state['admin_status']) and bool(state['oper_status']): port_state='Port is UP.'
-		elif not bool(state['admin_status']): port_state='Port is administratively DOWN!'
-		elif not bool(state['oper_status']): port_state='Port is DOWN!'
-		msg+=port_state+'\n'
-		last_change=int(state['last_change'])
-		if last_change<3600: last_change/=3600
-		else: last_change/=60
-		msg+='Last change: '+str(last_change)+'\n'
-		speed=int(state['speed'])
-		speed/=1000000
-		msg+='Statistics: '+str(speed)+'Mbps\n'
-		msg+='Ingress='+stats['ingress']+' octets\n'
-		msg+='Egress='+stats['egress']+' octets\n'
-		if macs: msg+='There are registered MACs in this port!\n'
-		else: msg+='No MACs registered on this port'
-		print(msg)
-
-#('ingress', ' ', '2312627382')
-#('in_errors', ' ', '0')
-#('in_discards', ' ', '0')
-#('egress', ' ', '4052951347')
-#('out_discards', ' ', '255440320')
-#('out_errors', ' ', '0')
-
+		    warn_lines.append('These are the port states for the closest reachable ancestors of host '+paradox)
+		    warn_lines.append('Ancestor: '+host['X'])
+		    warn_lines.append('Port: '+host['P']+' aka '+state['alias'])
+		    if bool(state['admin_status']) and bool(state['oper_status']): port_state='Port is UP.'
+		    elif not bool(state['admin_status']): port_state='Port is administratively DOWN!'
+		    elif not bool(state['oper_status']): port_state='Port is DOWN!'
+		    warn_lines.append('State: '+port_state)
+		    last_change=int(state['last_change'])
+		    if last_change>3600:
+			last_change/=3600
+			change_str=str(last_change)+' hours'
+		    else:
+			last_change/=60
+			change_str=str(last_change)+' minutes'
+		    warn_lines.append('Last change: '+change_str)
+		    speed=int(state['speed'])
+		    speed/=1000000
+		    warn_lines.append('Statistics: ')
+		    warn_lines.append('Speed='+str(speed)+'Mbps')
+		    warn_lines.append('Ingress='+stats['ingress']+' octets')
+		    warn_lines.append('Egress='+stats['egress']+' octets')
+		    if int(stats['in_errors']) or int(stats['out_errors']):
+			warn_lines.append('There are errors on port: '+stats['in_errors']+' octets in, '+stats['out_errors']+' octets out.')
+		    if int(stats['in_discards']) or int(stats['out_discards']):
+			warn_lines.append('There are packets discarded on port: '+stats['in_discards']+' octets in, '+stats['out_discards']+' octets out.')
+		    if macs: warn_lines.append('There are registered MACs in this port.')
+		    else: warn_lines.append('No MACs registered on this port!')
+		    self.jabber.send('\n'.join(warn_lines),self.config.contacts)
 
 class TakeAction:
     """ A class to test ready objects and some prototype tasks

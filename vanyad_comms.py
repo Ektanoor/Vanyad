@@ -65,8 +65,8 @@ class ConnectJabber:
 	status=self.live.get_query('contacts',[self.address],tuple(contact_list),'Or: '+str(cnt))
 	for user in status:
 	    if user[0]!='':
-#		print(user[0],' ',msg)
-		self.cl.send(Message(to=user[0],body=msg,typ='chat'))
+		print(user[0],' ',msg)
+#		self.cl.send(Message(to=user[0],body=msg,typ='chat'))
 	self.cl.Process(1)
 
     def __del__(self):
