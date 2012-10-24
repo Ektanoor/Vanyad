@@ -106,20 +106,18 @@ class PortChecks(TheGrid):
 			else: warn_lines.append('No packets discarded')
 			if macs: warn_lines.append('There are registered MACs on this port.')
 			else: warn_lines.append('No MACs registered on this port!')
-		    self.jabber.send('\n'.join(warn_lines),self.config.contacts)
+		    self.sender.send('\n'.join(warn_lines),self.config.contacts)
 
 class TakeAction:
     """ A class to test ready objects and some prototype tasks
     """
     fchecks=None
     nagcinga=None
-    jabber=None
-    sms=None
+    sender=None
     def __init__(self):
 	self.fchecks=FastChecks(1,0,1,1)
 	self.nagcinga=ConnectNagCinga()
-	self.jabber=ConnectJabber()
-	self.sms=SendSMS()
+	self.sender=SendMsg(['jabber','sms'])
 
     def check_massive_downs(self,top,lapse):
 	down_string=''
@@ -143,10 +141,8 @@ class TakeAction:
 	    t_msg='\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
 	    j_msg=msg+'\nHosts down:\n'+down_string+'\n\nParents affected:\n'+parent_string+t_msg
-	    self.jabber.send(j_msg,contacts)
+	    self.sender.send(j_msg,contacts)
 
-	    sms_msg=msg+'\nParents affected:\n'+parent_string+t_msg
-	    self.sms.send(sms_msg,contacts)
 
     def check_long_downs(self,lapse):
 	host_string=''
@@ -162,8 +158,8 @@ class TakeAction:
 	    msg='*Vanyad*\nALERT - HOSTS TOO LONG DOWN. No ACK for >'+str(lapse/3600)+' hours.\n'+ \
 		'\nHosts affected:\n'+host_string+  \
 	    '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
-	    self.jabber.send(msg,contacts)
-	    self.sms.send(msg,contacts)
+	    self.sender.send(msg,contacts)
+
 
 
 if __name__ == '__main__':

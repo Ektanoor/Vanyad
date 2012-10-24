@@ -34,12 +34,11 @@ def presence_handler(cl,msg):
         cl.send(Presence(to=who,typ='subscribed'))
         cl.send(Presence(to=who,typ='subscribe'))
 
-
 #These are the output classes.
 #While they shall not carry a Livestatus inheritance, still, they have to do some basic queries to send results.
 #In the future there could be some changes here, if things get more intricated.
 
-class ConnectJabber:
+class SendJabber:
     address=None
     live=None
     cl=None
@@ -65,7 +64,6 @@ class ConnectJabber:
 	status=self.live.get_query('contacts',[self.address],tuple(contact_list),'Or: '+str(cnt))
 	for user in status:
 	    if user[0]!='':
-#		print(user[0],' ',msg)
 		self.cl.send(Message(to=user[0],body=msg,typ='chat'))
 	self.cl.Process(1)
 
@@ -98,6 +96,17 @@ class SendSMS:
 	status=self.live.get_query('contacts',['pager'],tuple(contact_list),'Or: '+str(cnt))
 	for pager in status:
 	    if pager[0]!='':
-		print(pager[0],' ',msg)
-#		call([self.script,pager[0],msg],stdout=None,stderr=None)
+		call([self.script,pager[0],msg],stdout=None,stderr=None)
+
+class SendMsg:
+    jabber=None
+    sms=None
+    def __init__(self,via):
+	if 'jabber' in via: self.jabber=SendJabber()
+	if 'sms' in via: self.sms=SendSMS()
+
+    def send(self,msg,contacts):
+	print(contacts,' ',msg)
+#	if self.jabber: self.jabber.send(msg,contacts)
+#	if self.sms: self.sms.send(msg,contacts)
 

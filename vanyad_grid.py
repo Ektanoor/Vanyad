@@ -31,7 +31,7 @@ class TheGrid(ConnectProlog):
     def __init__(self):
 	self.config=ReadConf()
 	global p_base
-	self.jabber=ConnectJabber()
+	self.sender=SendMsg(['jabber'])
 	ConnectProlog.__init__(self)
 	if not p_base:
 	    p_base=1
@@ -72,7 +72,7 @@ class TheGrid(ConnectProlog):
 		warning+="!"
 		warn_lines.append(warning)
 	msg='*Vanyad*\nALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
-	self.jabber.send(msg,self.config.contacts)
+	self.sender.send(msg,self.config.contacts)
 
 
     def GridParadoxes(self):
@@ -83,4 +83,4 @@ class TheGrid(ConnectProlog):
 		warning='Host '+paradox['Y']+' is UP while parent '+paradox['X']+' is DOWN/UNREACHABLE!'
 		warn_lines.append(warning)
 	msg='*Vanyad*\nALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
-	self.jabber.send(msg,self.config.contacts)
+	self.sender.send(msg,self.config.contacts)

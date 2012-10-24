@@ -117,19 +117,19 @@ class CheckHostsLogs(ConnectLivestatus):
 	comment=''
 	jabber=ConnectJabber()
 
-	top_ten=dict(self.sdowns.most_common(10))
-	for host in top_ten:
-	    if top_ten[host]>1:
-		h_string=host+': '+str(self.sdowns[host])+' alerts'
+	top_ten=self.sdowns.most_common(10)
+	for host,alerts in top_ten:
+	    if alerts>1:
+		h_string=host+': '+str(alerts)+' alerts'
 		d_list.append(h_string)
 	if d_list:
 	    comment='These hosts have had most soft failures during the past '+str(self.t_lapse/3600)+' hours:\n'
 	    down_string='\n'.join(d_list)
 	    comment+=down_string+'\n\n'
 
-	top_ten=dict(self.sunreachs.most_common(10))
-	for host in top_ten:
-	    if top_ten[host]>1: u_list.append(host)
+	top_ten=self.sunreachs.most_common(10)
+	for host,alerts in top_ten:
+	    if alerts>1: u_list.append(host)
 	if u_list:
 	    comment+='These hosts have been frequently unreachable during the past '+str(self.t_lapse/3600)+' hours:\n'
 	    unreach_string='\n'.join(u_list)
