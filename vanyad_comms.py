@@ -98,16 +98,36 @@ class SendSMS:
 	    if pager[0]!='':
 		call([self.script,pager[0],msg],stdout=None,stderr=None)
 
+class SendTxt:
+    """A test class for messages
+    """
+    live=None
+    def __init__(self):
+	self.live=ConnectLivestatus()
+      
+    def send(self,msg,contacts):
+	contact_list=[]
+	for contact in contacts:
+	    contact_list.append('name = '+str(contact))
+	cnt=len(contacts)
+	status=self.live.get_query('contacts',[self.address],tuple(contact_list),'Or: '+str(cnt))
+	for user in status:
+	    if user[0]!='':
+		print(user[0])
+		print(msg)
+
+
 class SendMsg:
     jabber=None
     sms=None
+    txt=None
     def __init__(self,via):
 	if 'jabber' in via: self.jabber=SendJabber()
 	if 'sms' in via: self.sms=SendSMS()
+	self.txt.SendTxt
 
     def send(self,msg,contacts):
 	msg='*Vanyad*\n'+msg
-	print(contacts,' ',msg)
 #	if self.jabber: self.jabber.send(msg,contacts)
 #	if self.sms: self.sms.send(msg,contacts)
-
+	self.txt.send(msg,contacts)
