@@ -76,7 +76,6 @@ class PortChecks(TheGrid):
 			stats=snmp.port_stats()
 			macs=snmp.port_arptable()
 
-			warn_lines.append('INFO - PORT STATUS')
 			warn_lines.append('These are the port states for the closest reachable ancestors of host '+paradox)
 			warn_lines.append('Ancestor: '+host['X'])
 			warn_lines.append('Port: '+host['P']+' aka '+state['alias'])
@@ -106,7 +105,11 @@ class PortChecks(TheGrid):
 			else: warn_lines.append('No packets discarded')
 			if macs: warn_lines.append('There are registered MACs on this port.')
 			else: warn_lines.append('No MACs registered on this port!')
-		    self.sender.send('\n'.join(warn_lines),self.config.contacts)
+			
+			msg='INFO - PORT STATUS'+ \
+			    '\n'.join(warn_lines)+  \
+			    '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
+		    self.sender.send(msg,self.config.contacts)
 
 class TakeAction:
     """ A class to test ready objects and some prototype tasks
