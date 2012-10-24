@@ -67,7 +67,7 @@ class ConnectNagCinga:
     def acknowledge_service(self,host,service,sticky,notify,persistent,comment):
 	t_check=time.time()
 	t_stamp=int(str(round(t_check)).rstrip('0').rstrip('.'))
-        msg='['+str(t_stamp)+'] ACKNOWLEDGE_SVC_PROBLEM;'+host+';'+description+';'+str(sticky)+';'+str(notify)+';'+str(persistent)+';'+self.user+';'+comment+'\n'
+        msg='['+str(t_stamp)+'] ACKNOWLEDGE_SVC_PROBLEM;'+host+';'+service+';'+str(sticky)+';'+str(notify)+';'+str(persistent)+';'+self.user+';'+comment+'\n'
 	self.f.write(msg)
 
     def process_host(self,host,state,comment):

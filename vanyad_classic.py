@@ -72,7 +72,7 @@ class Blacklist(ConnectLivestatus):
 		self.nagcinga.acknowledge_host(host_name[0],1,0,0,self.comment)
 
     def ack_svc(self):
-	noacks=self.get_query('services',['host_name','description'],('state = 1','acknowledged = 0'))
+	noacks=self.get_query('services',['host_name','description'],('state = 2','acknowledged = 0'))
 	for host_name, description in noacks:
 	    if description in self.bl.lsts:
 		self.nagcinga.acknowledge_service(host_name,description,1,0,0,self.comment)

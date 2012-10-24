@@ -69,37 +69,43 @@ class PortChecks(TheGrid):
 		    snmp=SNMPCrawler(self.addresses[host['X']])
 		    snmp.identify_port(port)
 		    state=snmp.port_state()
-		    stats=snmp.port_stats()
-		    macs=snmp.port_arptable()
-		    print(state)
-
-		    warn_lines.append('These are the port states for the closest reachable ancestors of host '+paradox)
-		    warn_lines.append('Ancestor: '+host['X'])
-		    warn_lines.append('Port: '+host['P']+' aka '+state['alias'])
-		    if bool(state['admin_status']) and bool(state['oper_status']): port_state='Port is UP.'
-		    elif not bool(state['admin_status']): port_state='Port is administratively DOWN!'
-		    elif not bool(state['oper_status']): port_state='Port is DOWN!'
-		    warn_lines.append('State: '+port_state)
-		    last_change=int(state['last_change'])
-		    if last_change>3600:
-			last_change/=3600
-			change_str=str(last_change)+' hours'
+		    if not state['alias']:
+			warn_lines.append('*Vanyad*\nMAJOR ALERT - NO SNMP REPLY!')
+			warn_lines.append('Ancestor: '+host['X']+' for host '+paradox)
 		    else:
-			last_change/=60
-			change_str=str(last_change)+' minutes'
-		    warn_lines.append('Last change: '+change_str)
-		    speed=int(state['speed'])
-		    speed/=1000000
-		    warn_lines.append('Statistics: ')
-		    warn_lines.append('Speed='+str(speed)+'Mbps')
-		    warn_lines.append('Ingress='+stats['ingress']+' octets')
-		    warn_lines.append('Egress='+stats['egress']+' octets')
-		    if int(stats['in_errors']) or int(stats['out_errors']):
-			warn_lines.append('There are errors on port: '+stats['in_errors']+' octets in, '+stats['out_errors']+' octets out.')
-		    if int(stats['in_discards']) or int(stats['out_discards']):
-			warn_lines.append('There are packets discarded on port: '+stats['in_discards']+' octets in, '+stats['out_discards']+' octets out.')
-		    if macs: warn_lines.append('There are registered MACs in this port.')
-		    else: warn_lines.append('No MACs registered on this port!')
+			stats=snmp.port_stats()
+			macs=snmp.port_arptable()
+
+			warn_lines.append('*Vanyad*\nINFO - PORT STATUS')
+			warn_lines.append('These are the port states for the closest reachable ancestors of host '+paradox)
+			warn_lines.append('Ancestor: '+host['X'])
+			warn_lines.append('Port: '+host['P']+' aka '+state['alias'])
+			if bool(state['admin_status']) and bool(state['oper_status']): port_state='Port is UP.'
+			elif not bool(state['admin_status']): port_state='Port is administratively DOWN!'
+			elif not bool(state['oper_status']): port_state='Port is DOWN!'
+			warn_lines.append('State: '+port_state)
+			last_change=int(state['last_change'])
+			if last_change>3600:
+			    last_change/=3600
+			    change_str=str(last_change)+' hours'
+			else:
+			    last_change/=60
+			    change_str=str(last_change)+' minutes'
+			warn_lines.append('Last change: '+change_str)
+			speed=int(state['speed'])
+			speed/=1000000
+			warn_lines.append('Statistics: ')
+			warn_lines.append('Speed='+str(speed)+'Mbps')
+			warn_lines.append('Ingress='+stats['ingress']+' octets')
+			warn_lines.append('Egress='+stats['egress']+' octets')
+			if int(stats['in_errors']) or int(stats['out_errors']):
+			    warn_lines.append('There are errors on port: '+stats['in_errors']+' octets in, '+stats['out_errors']+' octets out.')
+			else: warn_lines.append('No errors on port')
+			if int(stats['in_discards']) or int(stats['out_discards']):
+			    warn_lines.append('There are packets discarded on port: '+stats['in_discards']+' octets in, '+stats['out_discards']+' octets out.')
+			else: warn_lines.append('No packets discarded')
+			if macs: warn_lines.append('There are registered MACs on this port.')
+			else: warn_lines.append('No MACs registered on this port!')
 		    self.jabber.send('\n'.join(warn_lines),self.config.contacts)
 
 class TakeAction:
@@ -163,6 +169,7 @@ class TakeAction:
 if __name__ == '__main__':
     guard=Blacklist()
     guard.ack_host()
+    guard.ack_svc()
     action=TakeAction()
     action.check_long_downs(28800)
     action.check_massive_downs(5,600)
