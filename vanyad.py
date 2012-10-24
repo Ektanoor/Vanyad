@@ -70,13 +70,13 @@ class PortChecks(TheGrid):
 		    snmp.identify_port(port)
 		    state=snmp.port_state()
 		    if not state['alias']:
-			warn_lines.append('*Vanyad*\nMAJOR ALERT - NO SNMP REPLY!')
+			warn_lines.append('MAJOR ALERT - NO SNMP REPLY!')
 			warn_lines.append('Ancestor: '+host['X']+' for host '+paradox)
 		    else:
 			stats=snmp.port_stats()
 			macs=snmp.port_arptable()
 
-			warn_lines.append('*Vanyad*\nINFO - PORT STATUS')
+			warn_lines.append('INFO - PORT STATUS')
 			warn_lines.append('These are the port states for the closest reachable ancestors of host '+paradox)
 			warn_lines.append('Ancestor: '+host['X'])
 			warn_lines.append('Port: '+host['P']+' aka '+state['alias'])
@@ -137,7 +137,7 @@ class TakeAction:
 			p_list.append(parent)
 		parent_string='\n'.join(p_list)
 	    down_string='\n'.join(d_list)
-	    msg='*Vanyad*\nMAJOR ALERT - MASSIVE BLACKOUT:\n'+str(len(downed))+' hosts down in '+str(lapse/60)+' minutes.\n'
+	    msg='MAJOR ALERT - MASSIVE BLACKOUT:\n'+str(len(downed))+' hosts down in '+str(lapse/60)+' minutes.\n'
 	    t_msg='\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
 	    j_msg=msg+'\nHosts down:\n'+down_string+'\n\nParents affected:\n'+parent_string+t_msg
@@ -155,7 +155,7 @@ class TakeAction:
 		self.nagcinga.acknowledge_host(host,1,0,0,comment)
 		d_list.append(host)
 	    host_string='\n'.join(d_list)
-	    msg='*Vanyad*\nALERT - HOSTS TOO LONG DOWN. No ACK for >'+str(lapse/3600)+' hours.\n'+ \
+	    msg='ALERT - HOSTS TOO LONG DOWN. No ACK for >'+str(lapse/3600)+' hours.\n'+ \
 		'\nHosts affected:\n'+host_string+  \
 	    '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 	    self.sender.send(msg,contacts)

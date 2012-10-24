@@ -104,7 +104,7 @@ class CheckHostsLogs(ConnectLivestatus):
 	    comment+=nope_string
 
 
-	msg='*Vanyad*\nALERT - HOSTS WITH REPEATED FAILURES\n'+ \
+	msg='ALERT - HOSTS WITH REPEATED FAILURES\n'+ \
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
@@ -136,7 +136,7 @@ class CheckHostsLogs(ConnectLivestatus):
 	    comment+=unreach_string+'\n\n'
 
 
-	msg='*Vanyad*\nALERT - HOSTS WITH POSSIBLE FAILURES\n'+ \
+	msg='ALERT - HOSTS WITH POSSIBLE FAILURES\n'+ \
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 

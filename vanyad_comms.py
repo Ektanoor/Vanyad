@@ -106,6 +106,7 @@ class SendMsg:
 	if 'sms' in via: self.sms=SendSMS()
 
     def send(self,msg,contacts):
+	msg='*Vanyad*\n'+msg
 	print(contacts,' ',msg)
 #	if self.jabber: self.jabber.send(msg,contacts)
 #	if self.sms: self.sms.send(msg,contacts)

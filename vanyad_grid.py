@@ -71,7 +71,7 @@ class TheGrid(ConnectProlog):
 		if blocks>0: warning+=" and blocking "+str(blocks)+" nodes"
 		warning+="!"
 		warn_lines.append(warning)
-	msg='*Vanyad*\nALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
+	msg='ALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 	self.sender.send(msg,self.config.contacts)
 
 
@@ -82,5 +82,5 @@ class TheGrid(ConnectProlog):
 	    if paradox['X'] not in self.blacklist.lsts:
 		warning='Host '+paradox['Y']+' is UP while parent '+paradox['X']+' is DOWN/UNREACHABLE!'
 		warn_lines.append(warning)
-	msg='*Vanyad*\nALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
+	msg='ALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 	self.sender.send(msg,self.config.contacts)
