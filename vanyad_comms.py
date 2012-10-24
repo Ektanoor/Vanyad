@@ -103,6 +103,8 @@ class SendTxt:
     """
     live=None
     def __init__(self):
+	config=ReadConf()
+	self.address=config.address
 	self.live=ConnectLivestatus()
       
     def send(self,msg,contacts):
@@ -124,10 +126,11 @@ class SendMsg:
     def __init__(self,via):
 	if 'jabber' in via: self.jabber=SendJabber()
 	if 'sms' in via: self.sms=SendSMS()
-	self.txt.SendTxt
+	self.txt=SendTxt()
 
     def send(self,msg,contacts):
 	msg='*Vanyad*\n'+msg
+	self.txt.send(msg,contacts)
 #	if self.jabber: self.jabber.send(msg,contacts)
 #	if self.sms: self.sms.send(msg,contacts)
-	self.txt.send(msg,contacts)
+
