@@ -131,13 +131,14 @@ class SendMsg:
 	    for contact in contacts:
 		contacts2.append(self.xmpp_dict[contact])
 	    self.txt.send(msg,contacts2)
-	else:
-	    if self.jabber:
-		contacts2=[]
-		for contact in contacts: contacts2.append(self.xmpp_dict[contact])
-		self.jabber.send(msg,contacts2)
-	    if self.sms:
-		contacts2=[]
-		for contact in contacts: contacts2.append(self.sms_dict[contact])
-		self.sms.send(msg,contacts2)
+	if self.jabber:
+	    contacts2=[]
+	    for contact in contacts:
+		if contact in self.xmpp_dict: contacts2.append(self.xmpp_dict[contact])
+	    self.jabber.send(msg,contacts2)
+	if self.sms:
+	    contacts2=[]
+	    for contact in contacts:
+		if contact in self.sms_dict: contacts2.append(self.sms_dict[contact])
+	    self.sms.send(msg,contacts2)
 
