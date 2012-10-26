@@ -26,12 +26,12 @@ class TheGrid(ConnectProlog):
     """
     config=None
     addresses={}
-    jabber=None
+    sender=None
     blacklist=None
     def __init__(self):
 	self.config=ReadConf()
 	global p_base
-	self.sender=SendMsg(['jabber'])
+	self.sender=SendMsg()
 	ConnectProlog.__init__(self)
 	if not p_base:
 	    p_base=1
@@ -71,8 +71,9 @@ class TheGrid(ConnectProlog):
 		if blocks>0: warning+=" and blocking "+str(blocks)+" nodes"
 		warning+="!"
 		warn_lines.append(warning)
-	msg='ALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
-	self.sender.send(msg,self.config.contacts)
+	if warn_lines:
+	    msg='ALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
+	    self.sender.send(msg,self.config.contacts)
 
 
     def GridParadoxes(self):
@@ -82,5 +83,6 @@ class TheGrid(ConnectProlog):
 	    if paradox['X'] not in self.blacklist.lsts:
 		warning='Host '+paradox['Y']+' is UP while parent '+paradox['X']+' is DOWN/UNREACHABLE!'
 		warn_lines.append(warning)
-	msg='ALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
-	self.sender.send(msg,self.config.contacts)
+	if warn_lines:
+	    msg='ALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
+	    self.sender.send(msg,self.config.contacts)

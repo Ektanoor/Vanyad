@@ -77,7 +77,7 @@ class CheckHostsLogs(ConnectLivestatus):
 	u_list=[]
 	nope_list=[]
 	comment=''
-	jabber=ConnectJabber()
+	sender=SendMsg()
 	for host in self.hdowns: 
 	    if self.hdowns[host]>1:
 		h_string=host+': '+str(self.hdowns[host])+' alerts'
@@ -108,14 +108,14 @@ class CheckHostsLogs(ConnectLivestatus):
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
-	jabber.send(msg,self.config.contacts)
+	sender.send(msg,self.config.contacts)
 
     def report_softstates(self):
 	d_list=[]
 	u_list=[]
 	nope_list=[]
 	comment=''
-	jabber=ConnectJabber()
+	sender=SendMsg()
 
 	top_ten=self.sdowns.most_common(10)
 	for host,alerts in top_ten:
@@ -140,7 +140,7 @@ class CheckHostsLogs(ConnectLivestatus):
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
-	jabber.send(msg,self.config.contacts)
+	sender.send(msg,self.config.contacts)
 
 bit=CheckHostsLogs()
 bit.states()

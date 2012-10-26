@@ -79,7 +79,7 @@ class CheckServicesLogs(vanyad_start.ConnectLivestatus):
 	nope_list=[]
 	comment=''
 	
-	jabber=vanyad_start.ConnectJabber()
+	sender=SendMsg()
 	for host in self.hdowns: 
 	    if self.hdowns[host]>1: d_list.append(host)
 	if d_list:
@@ -108,14 +108,14 @@ class CheckServicesLogs(vanyad_start.ConnectLivestatus):
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
-	jabber.send(msg,self.config.contacts)
+	sender.send(msg,self.config.contacts)
 
     def report_softstates(self):
 	d_list=[]
 	u_list=[]
 	nope_list=[]
 	comment=''
-	jabber=vanyad_start.ConnectJabber()
+	sender=SendMsg()
 
 	top_ten=dict(self.sdowns.most_common(10))
 	for host in top_ten:
@@ -138,7 +138,7 @@ class CheckServicesLogs(vanyad_start.ConnectLivestatus):
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
-	jabber.send(msg,self.config.contacts)
+	sender.send(msg,self.config.contacts)
 
 
 bit=CheckServicesLogs()

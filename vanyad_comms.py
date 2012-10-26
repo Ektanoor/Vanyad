@@ -39,14 +39,10 @@ def presence_handler(cl,msg):
 #In the future there could be some changes here, if things get more intricated.
 
 class SendJabber:
-    address=None
-    live=None
     cl=None
 
     def __init__(self):
 	config=ReadConf()
-	self.address=config.address
-	self.live=ConnectLivestatus()
 	self.cl=Client(config.xmpp_server,debug=[])
 	if not self.cl.connect(): raise IOError('Can not connect to server.')
 	if not self.cl.auth(config.xmpp_user,config.xmpp_passwd,'bot'): raise IOError('Can not auth with server.')
@@ -57,21 +53,14 @@ class SendJabber:
 	self.cl.Process(1)
 
     def send(self,msg,contacts):
-	contact_list=[]
 	for contact in contacts:
-	    contact_list.append('name = '+str(contact))
-	cnt=len(contacts)
-	status=self.live.get_query('contacts',[self.address],tuple(contact_list),'Or: '+str(cnt))
-	for user in status:
-	    if user[0]!='':
-		self.cl.send(Message(to=user[0],body=msg,typ='chat'))
+	    self.cl.send(Message(to=contact,body=msg,typ='chat'))
 	self.cl.Process(1)
 
     def __del__(self):
 	self.cl.disconnect()
 
 class SendSMS:
-    live=None
     script=None
     def __init__(self):
 	"""Here, we have a problem with the SMS daemon: he loves to zombie from time to time. So, we first check its status.
@@ -88,49 +77,67 @@ class SendSMS:
 		return 1
 
     def send(self,msg,contacts):
-	contact_string=''
-	contact_list=[]
 	for contact in contacts:
-	    contact_list.append('name = '+str(contact))
-	cnt=len(contacts)
-	status=self.live.get_query('contacts',['pager'],tuple(contact_list),'Or: '+str(cnt))
-	for pager in status:
-	    if pager[0]!='':
-		call([self.script,pager[0],msg],stdout=None,stderr=None)
+	    call([self.script,contact,msg],stdout=None,stderr=None)
 
 class SendTxt:
     """A test class for messages
     """
-    live=None
     def __init__(self):
-	config=ReadConf()
-	self.address=config.address
-	self.live=ConnectLivestatus()
-      
+	pass
+
     def send(self,msg,contacts):
-	contact_list=[]
-	for contact in contacts:
-	    contact_list.append('name = '+str(contact))
-	cnt=len(contacts)
-	status=self.live.get_query('contacts',[self.address],tuple(contact_list),'Or: '+str(cnt))
-	for user in status:
-	    if user[0]!='':
-		print(user[0])
-		print(msg)
+	for contact in contacts: print(contact)
+	print(msg)
 
 
 class SendMsg:
     jabber=None
     sms=None
     txt=None
-    def __init__(self,via):
-	if 'jabber' in via: self.jabber=SendJabber()
-	if 'sms' in via: self.sms=SendSMS()
+    xmpp_dict={}
+    sms_dict={}
+
+    def __init__(self):
+	addresses=['name']
+	xmpp_pos=0
+	sms_pos=0
+	pos=0
+	config=ReadConf()
+	self.live=ConnectLivestatus()
+
 	self.txt=SendTxt()
+	if config.xmpp_address: 
+	    self.jabber=SendJabber()
+	    addresses.append(config.xmpp_address)
+	    pos+=1
+	    xmpp_pos=pos
+
+	if config.sms_address:
+	    self.sms=SendSMS()
+	    addresses.append(config.sms_address)
+	    pos+=1
+	    sms_pos=pos
+
+	status=self.live.get_query('contacts',addresses,[])
+	for line in status:
+	    if xmpp_pos and line[xmpp_pos]: self.xmpp_dict[line[0]]=line[xmpp_pos]
+	    if sms_pos and line[sms_pos]: self.sms_dict[line[0]]=line[sms_pos]
 
     def send(self,msg,contacts):
 	msg='*Vanyad*\n'+msg
-	self.txt.send(msg,contacts)
-#	if self.jabber: self.jabber.send(msg,contacts)
-#	if self.sms: self.sms.send(msg,contacts)
+	if debug:
+	    contacts2=[]
+	    for contact in contacts:
+		contacts2.append(self.xmpp_dict[contact])
+	    self.txt.send(msg,contacts2)
+	else:
+	    if self.jabber:
+		contacts2=[]
+		for contact in contacts: contacts2.append(self.xmpp_dict[contact])
+		self.jabber.send(msg,contacts2)
+	    if self.sms:
+		contacts2=[]
+		for contact in contacts: contacts2.append(self.sms_dict[contact])
+		self.sms.send(msg,contacts2)
 

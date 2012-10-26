@@ -120,7 +120,7 @@ class TakeAction:
     def __init__(self):
 	self.fchecks=FastChecks(1,0,1,1)
 	self.nagcinga=ConnectNagCinga()
-	self.sender=SendMsg(['jabber','sms'])
+	self.sender=SendMsg()
 
     def check_massive_downs(self,top,lapse):
 	down_string=''

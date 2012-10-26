@@ -26,11 +26,16 @@ class ReadConf:
     socket_command=None
     snmp_community=None
 
-    address=None
+    debug=0
+
+    xmpp_address=None
+    xmpp_command=None
     xmpp_server=None
     xmpp_user=None
     xmpp_passwd=None
 
+    sms_address=None
+    sms_command=None
     check_smsd=None
     script=None
     sms_zombies=None
@@ -59,23 +64,28 @@ class ReadConf:
 	if config.has_option('snmp','community'): self.snmp_community=config.get('snmp', 'community')
 	else: self.snmp_community='public'
 
-	if config.has_option('jabber','address'): self.address=config.get('jabber', 'address')
-	else: self.address='address1'
+	if config.has_option('comms','debug'): self.debug=config.get('comms', 'debug')
 
-	if config.has_option('jabber','xmpp_server'): self.xmpp_server=config.get('jabber', 'xmpp_server')
+	if config.has_option('xmpp','address'): self.xmpp_address=config.get('xmpp', 'address')
+	else: self.xmpp_address='address1'
+	if config.has_option('xmpp','server'): self.xmpp_server=config.get('xmpp', 'server')
 	else: raise NoOptions('Jabber server not specified')
-	if config.has_option('jabber','xmpp_user'): self.xmpp_user=config.get('jabber', 'xmpp_user')
+	if config.has_option('xmpp','user'): self.xmpp_user=config.get('xmpp', 'user')
 	else: raise NoOptions('Jabber user not specified')
-	if config.has_option('jabber','xmpp_passwd'): self.xmpp_passwd=config.get('jabber', 'xmpp_passwd')
+	if config.has_option('xmpp','passwd'): self.xmpp_passwd=config.get('xmpp', 'passwd')
 	else: raise NoOptions('Jabber password not specified')
 
+	if config.has_option('sms','address'): self.sms_address=config.get('sms', 'address')
+	else: self.sms_address='pager'
 	if config.has_option('sms','check_smsd'): self.check_smsd=config.get('sms', 'check_smsd')
 	else: self.check_smsd=0
 	if config.has_option('sms','script'): self.script=config.get('sms', 'script')
 	else: self.script='/usr/bin/sendsms'
 
-	if config.has_option('sms','sms_zombies'): self.sms_zombies=config.get('sms', 'sms_zombies')
-	else: raise NoOptions('SMS Zombies service check not defined')
+	if config.has_option('sms','zombies'): self.sms_zombies=config.get('sms', 'zombies')
+	else: self.sms_zombies=0
+
+
 
 
 class OpenShelves:
