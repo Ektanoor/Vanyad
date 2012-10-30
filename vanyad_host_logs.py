@@ -144,8 +144,9 @@ class CheckHostsLogs(ConnectLivestatus):
 
 	sender.send(msg,self.config.contacts,netcon)
 
-bit=CheckHostsLogs()
-bit.states()
-bit.report_hardstates()
-bit.report_softstates()
+if __name__ == '__main__':
+    bit=CheckHostsLogs()
+    bit.states()
+    bit.report_hardstates()
+    bit.report_softstates()
 

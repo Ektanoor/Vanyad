@@ -21,7 +21,7 @@ from vanyad_shelves import *
 
 class FastChecks(ConnectLivestatus):
     """This class is a base for many small checks on hosts. 
-       Most of the work is made with help of Pythons's internal datatypes
+       Most of the work is made with help of Pythons's native datatypes
     """
     status=[]
     def __init__(self,state,acknowledge,notification_period,notification):

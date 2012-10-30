@@ -73,6 +73,7 @@ class SendSMS:
 	if config.check_smsd:
 	    status=self.live.get_query('services',['state'],['description = '+config.sms_zombies])
 	    if status!=[[0]]:
+		netcon=10
 		print('A serious technical problem ocurred - zombies are on the wild and thus no sms can be sent')
 		return 1
 

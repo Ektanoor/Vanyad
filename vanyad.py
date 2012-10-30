@@ -19,7 +19,7 @@ from vanyad_classic import *
 from vanyad_comms import *
 from vanyad_snmp import *
 from vanyad_grid import *
-
+from vanyad_host_logs import *
 
 class AlienNodes(TheGrid):
     """These nodes are hardware that somehow is "out of reach" for regular monitoring.
@@ -182,3 +182,7 @@ if __name__ == '__main__':
     recognizer.ProcessAliens()
     bit=PortChecks()
     bit.show_state()
+    clu=CheckHostsLogs()
+    clu.states()
+    clu.report_hardstates()
+    clu.report_softstates()
