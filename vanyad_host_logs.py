@@ -77,6 +77,7 @@ class CheckHostsLogs(ConnectLivestatus):
 	u_list=[]
 	nope_list=[]
 	comment=''
+	netcon=3
 	sender=SendMsg()
 	for host in self.hdowns: 
 	    if self.hdowns[host]>1:
@@ -108,13 +109,14 @@ class CheckHostsLogs(ConnectLivestatus):
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
-	sender.send(msg,self.config.contacts)
+	sender.send(msg,self.config.contacts,netcon)
 
     def report_softstates(self):
 	d_list=[]
 	u_list=[]
 	nope_list=[]
 	comment=''
+	netcon=2
 	sender=SendMsg()
 
 	top_ten=self.sdowns.most_common(10)
@@ -140,7 +142,7 @@ class CheckHostsLogs(ConnectLivestatus):
                 '\nHosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
-	sender.send(msg,self.config.contacts)
+	sender.send(msg,self.config.contacts,netcon)
 
 bit=CheckHostsLogs()
 bit.states()

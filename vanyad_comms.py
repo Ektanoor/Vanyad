@@ -98,6 +98,7 @@ class SendMsg:
     xmpp_dict={}
     sms_dict={}
 
+
     def __init__(self):
 	addresses=['name']
 	xmpp_pos=0
@@ -124,19 +125,19 @@ class SendMsg:
 	    if xmpp_pos and line[xmpp_pos]: self.xmpp_dict[line[0]]=line[xmpp_pos]
 	    if sms_pos and line[sms_pos]: self.sms_dict[line[0]]=line[sms_pos]
 
-    def send(self,msg,contacts):
+    def send(self,msg,contacts,netcon):
 	msg='*Vanyad*\n'+msg
 	if debug:
 	    contacts2=[]
 	    for contact in contacts:
 		contacts2.append(self.xmpp_dict[contact])
 	    self.txt.send(msg,contacts2)
-	if self.jabber:
+	if self.jabber and netcon>1:
 	    contacts2=[]
 	    for contact in contacts:
 		if contact in self.xmpp_dict: contacts2.append(self.xmpp_dict[contact])
 	    self.jabber.send(msg,contacts2)
-	if self.sms:
+	if self.sms and netcon>4:
 	    contacts2=[]
 	    for contact in contacts:
 		if contact in self.sms_dict: contacts2.append(self.sms_dict[contact])

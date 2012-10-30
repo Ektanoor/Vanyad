@@ -57,6 +57,7 @@ class PortChecks(TheGrid):
 	paradoxes=set()
 	ancestors=set()
 	warn_lines=[]
+	netcon=4
 	paradox_list=list(self.prolog.query("paradoxes(X,Y)"))
 	for para_dict in paradox_list:
 	    paradoxes.add(para_dict['X'])
@@ -109,7 +110,7 @@ class PortChecks(TheGrid):
 			msg='INFO - PORT STATUS'+ \
 			    '\n'.join(warn_lines)+  \
 			    '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
-		    self.sender.send(msg,self.config.contacts)
+		    self.sender.send(msg,self.config.contacts,netcon)
 
 class TakeAction:
     """ A class to test ready objects and some prototype tasks
@@ -127,6 +128,7 @@ class TakeAction:
 	parent_string=''
 	d_list=[]
 	p_list=[]
+	netcon=6
 	parents=self.fchecks.parents_affected(lapse)
 	contacts=self.fchecks.which_contacts()
 	downed=parents.keys()
@@ -144,12 +146,13 @@ class TakeAction:
 	    t_msg='\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
 	    j_msg=msg+'\nHosts down:\n'+down_string+'\n\nParents affected:\n'+parent_string+t_msg
-	    self.sender.send(j_msg,contacts)
+	    self.sender.send(j_msg,contacts,netcon)
 
 
     def check_long_downs(self,lapse):
 	host_string=''
 	d_list=[]
+	netcon=5
 	changes=self.fchecks.hosts_changes(lapse)
 	if changes:
 	    contacts=self.fchecks.which_contacts()
@@ -161,7 +164,7 @@ class TakeAction:
 	    msg='ALERT - HOSTS TOO LONG DOWN. No ACK for >'+str(lapse/3600)+' hours.\n'+ \
 		'\nHosts affected:\n'+host_string+  \
 	    '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
-	    self.sender.send(msg,contacts)
+	    self.sender.send(msg,contacts,netcon)
 
 
 

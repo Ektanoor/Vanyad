@@ -52,6 +52,7 @@ class TheGrid(ConnectProlog):
 	is_block=1
 	bl_hosts=[]
 	warn_lines=[]
+	netcon=3
 	state_list=list(self.prolog.query("state(X,'DOWN')"))
 	for host in state_list:
 	    if host['X'] not in self.blacklist.lsts:
@@ -73,11 +74,12 @@ class TheGrid(ConnectProlog):
 		warn_lines.append(warning)
 	if warn_lines:
 	    msg='ALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
-	    self.sender.send(msg,self.config.contacts)
+	    self.sender.send(msg,self.config.contacts,netcon)
 
 
     def GridParadoxes(self):
 	warn_lines=[]
+	netcon=2
 	paradoxes=list(self.prolog.query("paradoxes(X,Y)"))
 	for paradox in paradoxes:
 	    if paradox['X'] not in self.blacklist.lsts:
@@ -85,4 +87,4 @@ class TheGrid(ConnectProlog):
 		warn_lines.append(warning)
 	if warn_lines:
 	    msg='ALERT:\n'+'\n'.join(warn_lines)+'\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
-	    self.sender.send(msg,self.config.contacts)
+	    self.sender.send(msg,self.config.contacts,netcon)
