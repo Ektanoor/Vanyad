@@ -15,133 +15,153 @@
 # Boston, MA 02110-1301 USA.
 
 import time
-import vanyad_start
+from vanyad import *
 from collections import Counter
+from collections import defaultdict
 
 
-class CheckServicesLogs(vanyad_start.ConnectLivestatus):
+class CheckServicesLogs(ConnectLivestatus):
     t_lapse=86400
     status=None
     blacklist=None
     go_black=1
     config=None
-    hdowns=Counter()
+    hwarnings=Counter()
+    hcritical=Counter()
     hups=Counter()
-    hunreachs=Counter()
+    hunknowns=Counter()
     hcommon_states=Counter()
-    sdowns=Counter()
+    swarnings=Counter()
+    scritical=Counter()
     sups=Counter()
-    sunreachs=Counter()
+    sunknowns=Counter()
     scommon_states=Counter()
 
     def __init__(self):
-	vanyad_start.ConnectLivestatus.__init__(self)
+	ConnectLivestatus.__init__(self)
 	self.config=ReadConf()
 	t_check=time.time()-self.t_lapse
 	t_stamp=str(round(t_check)).rstrip('0').rstrip('.')
-        self.status=self.get_query('log',['host_name','service_description','state','state_type','type','attempt','current_host_max_check_attempts'],['time >= '+t_stamp,'class = 1'],'WaitTrigger: log')
-        if self.go_black: self.blacklist=vanyad_start.OpenShelves('blacklist')
-        print(self.status)
+        self.status=self.get_query('log',['host_name','service_description','state','state_type','type','attempt','current_service_max_check_attempts'],['time >= '+t_stamp,'class = 1'],'WaitTrigger: log')
+        if self.go_black: self.blacklist=OpenShelves('blacklist')
+
 
     def states(self):
 	service_alert='SERVICE ALERT'
 	record_state={}
-	for host_name,service_description,state,state_type,type,attempt,current_host_max_check_attempts in self.status:
-	    if self.go_black and host_name in self.blacklist.lsts: continue
-	    if type==host_alert:
+	for host_name,service_description,state,state_type,type,attempt,current_service_max_check_attempts in self.status:
+	    if self.go_black and service_description in self.blacklist.lsts: continue
+	    key=service_description+'@'+host_name
+	    if type==service_alert:
 		if state_type=='HARD':
 		    if state==0:
-			if attempt<current_host_max_check_attempts and attempt>1: print("Houston, we have a problem: ", host_name, attempt)
-			self.hups[host_name]+=1
+			if attempt<current_service_max_check_attempts and attempt>1: print("Houston, we have a problem: ", host_name,service_description,attempt)
+			self.hups[key]+=1
 			self.hcommon_states['UP']+=1
-		    elif state==1:
-			if attempt<current_host_max_check_attempts: print("Houston, we have a problem: ", host_name, attempt,state)
-			self.hdowns[host_name]+=1
-			self.hcommon_states['DOWN']+=1
+		    if state==1:
+			if attempt<current_service_max_check_attempts and attempt>1: print("Houston, we have a problem: ", host_name,service_description,attempt)
+			self.hwarnings[key]+=1
+			self.hcommon_states['WARNING']+=1
 		    elif state==2:
-			self.hunreachs[host_name]+=1
-			self.hcommon_states['UNREACHABLE']+=1
+			if attempt<current_service_max_check_attempts: print("Houston, we have a problem: ", host_name,service_description,attempt,state)
+			self.hcritical[key]+=1
+			self.hcommon_states['CRITICAL']+=1
+		    elif state==3:
+			self.hunknowns[key]+=1
+			self.hcommon_states['UKNOWN']+=1
 		if state_type=='SOFT' and attempt==1:
-		    if state==0: self.sups[host_name]+=1
-		    elif state==1: self.sdowns[host_name]+=1
-		    elif state==2: self.sunreachs[host_name]+=1
-	for host in self.hups: del(self.sups[host])
-	for host in self.hdowns: del(self.sdowns[host])
-	for host in self.hunreachs: del(self.sunreachs[host])
+		    if state==0: self.sups[key]+=1
+		    elif state==1: self.sunknowns[key]+=1
+		    elif state==2: self.scritical[key]+=1
+		    elif state==3: self.sunknowns[key]+=1
+	for host in self.hups: del(self.sups[key])
+	for host in self.hwarnings: del(self.swarnings[key])
+	for host in self.hcritical: del(self.scritical[key])
+	for host in self.hunknowns: del(self.sunknowns[key])
 
-	for host in self.sups: self.scommon_states['UP']+=self.sups[host]
-	for host in self.sdowns: self.scommon_states['DOWN']+=self.sdowns[host]
-	for host in self.sunreachs: self.scommon_states['UNREACHABLE']+=self.sunreachs[host]
+	for host in self.sups: self.scommon_states['UP']+=self.sups[key]
+	for host in self.swarnings: self.scommon_states['WARNING']+=self.swarnings[key]
+	for host in self.scritical: self.scommon_states['CRITICAL']+=self.scritical[key]
+	for host in self.sunknowns: self.scommon_states['UNKNOWN']+=self.sunknowns[key]
+
 
     def report_hardstates(self):
 	d_list=[]
 	u_list=[]
 	nope_list=[]
 	comment=''
-	
+	netcon=3
 	sender=SendMsg()
-	for host in self.hdowns: 
-	    if self.hdowns[host]>1: d_list.append(host)
+
+	top=self.hcritical.most_common()
+	for host,alerts in top:
+	    if alerts>1:
+		h_string=host+': '+str(alerts)+' alerts'
+		d_list.append(h_string)
 	if d_list:
-	    comment='These hosts have had repeated failures during the past '+str(self.t_lapse/3600)+' hours:\n'
-	    down_string='\n'.join(d_list)
-	    comment+=down_string+'\n\n'
+	    comment='These services have had repeated failures during the past '+str(self.t_lapse/3600)+' hours:\n'
+	    critical_string='\n'.join(d_list)
+	    comment+=critical_string+'\n\n'
 
-	for host in self.hunreachs: 
-	    if self.hunreachs[host]>1: u_list.append(host)
+	top=self.hunknowns.most_common()
+	for host,alerts in top: 
+	    if alerts>1: u_list.append(host)
 	if u_list:
-	    comment+='These hosts have been repeatedly unreachable during the past '+str(self.t_lapse/3600)+' hours:\n'
-	    unreach_string='\n'.join(u_list)
-	    comment+=unreach_string+'\n\n'
+	    comment+='These services stayed repeatedly on unknown state during the past '+str(self.t_lapse/3600)+' hours:\n'
+	    unknown_string='\n'.join(u_list)
+	    comment+=unknown_string+'\n\n'
 
-	for host in self.hdowns:
-	    if host not in self.hups or self.hups[host]<self.hdowns[host]: nope_list.append(host)
-	for host in self.hunreachs:
-	    if host not in self.hups and host not in self.hdowns: nope_list.append(host)
+	for host in self.hcritical:
+	    if host not in self.hups or self.hups[host]<self.hcritical[host]: nope_list.append(host)
+	for host in self.hunknowns:
+	    if host not in self.hups and host not in self.hcritical: nope_list.append(host)
 	if nope_list:
-	    comment+='These hosts may have not recovered during the past '+str(self.t_lapse/3600)+' hours:\n'
+	    comment+='These services may have not recovered during the past '+str(self.t_lapse/3600)+' hours:\n'
 	    nope_string='\n'.join(nope_list)
 	    comment+=nope_string
 
 
-	msg='ALERT - HOSTS WITH REPEATED FAILURES\n'+ \
-                '\nHosts affected:\n'+comment+  \
+	msg='ALERT - SERVICES WITH REPEATED FAILURES\n'+ \
+                '\nServices@Hosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
-	sender.send(msg,self.config.contacts)
+	sender.send(msg,self.config.contacts,netcon)
 
     def report_softstates(self):
 	d_list=[]
 	u_list=[]
 	nope_list=[]
 	comment=''
+	netcon=2
 	sender=SendMsg()
 
-	top_ten=dict(self.sdowns.most_common(10))
-	for host in top_ten:
-	    if top_ten[host]>1: d_list.append(host)
+	top_ten=self.scritical.most_common(10)
+	for host,alerts in top_ten:
+	    if alerts>1:
+		h_string=host+': '+str(alerts)+' alerts'
+		d_list.append(h_string)
 	if d_list:
-	    comment='These hosts have had most soft failures during the past '+str(self.t_lapse/3600)+' hours:\n'
-	    down_string='\n'.join(d_list)
-	    comment+=down_string+'\n\n'
+	    comment='These services have had most soft failures during the past '+str(self.t_lapse/3600)+' hours:\n'
+	    critical_string='\n'.join(d_list)
+	    comment+=critical_string+'\n\n'
 
-	top_ten=dict(self.sunreachs.most_common(10))
-	for host in top_ten:
-	    if top_ten[host]>1: u_list.append(host)
+	top_ten=self.sunknowns.most_common(10)
+	for host,alerts in top_ten:
+	    if alerts>1: u_list.append(host)
 	if u_list:
-	    comment+='These hosts have been frequently unreachable during the past '+str(self.t_lapse/3600)+' hours:\n'
-	    unreach_string='\n'.join(u_list)
-	    comment+=unreach_string+'\n\n'
+	    comment+='These services stayed frequently on unknown state during the past '+str(self.t_lapse/3600)+' hours:\n'
+	    unknown_string='\n'.join(u_list)
+	    comment+=unknown_string+'\n\n'
 
 
-	msg='ALERT - HOSTS WITH POSSIBLE FAILURES\n'+ \
-                '\nHosts affected:\n'+comment+  \
+	msg='ALERT - SERVICES WITH POSSIBLE FAILURES\n'+ \
+                '\nServices@Hosts affected:\n'+comment+  \
             '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 
-	sender.send(msg,self.config.contacts)
+	sender.send(msg,self.config.contacts,netcon)
 
-
-bit=CheckServicesLogs()
-#bit.states()
-#bit.report_hardstates()
-#bit.report_softstates()
+if __name__ == '__main__':
+	bit=CheckServicesLogs()
+	bit.states()
+	bit.report_hardstates()
+	bit.report_softstates()

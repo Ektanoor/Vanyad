@@ -18,6 +18,26 @@ import shelve
 import ConfigParser
 from collections import *
 
+class NetconAlert:
+    """Presently this is only a stub, to record the temporary version of alert hierarchy
+    """
+    netcon={
+	    0:'Zero Warns',
+	    1:'Only Warns',
+	    2:'Minor Problems',
+	    3:'Generic Problems',
+	    4:'Major Problems',
+	    5:'Critical - Nodes',
+	    6:'Critical - Segments',
+	    7:'Critical - Networks',
+	    8:'Critical - Internet',
+	    9:'Critical - No Access',
+	    10:'Broken Arrow'
+	    }
+
+    def __init__(self):
+	pass
+
 class ReadConf:
     config=None
     system=None

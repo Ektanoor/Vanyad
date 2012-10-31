@@ -79,17 +79,20 @@ class CheckHostsLogs(ConnectLivestatus):
 	comment=''
 	netcon=3
 	sender=SendMsg()
-	for host in self.hdowns: 
-	    if self.hdowns[host]>1:
-		h_string=host+': '+str(self.hdowns[host])+' alerts'
+
+	top=self.hdowns.most_common()
+	for host,alerts in top: 
+	    if alerts>1:
+		h_string=host+': '+str(alerts)+' alerts'
 		d_list.append(h_string)
 	if d_list:
 	    comment='These hosts have had repeated failures during the past '+str(self.t_lapse/3600)+' hours:\n'
 	    down_string='\n'.join(d_list)
 	    comment+=down_string+'\n\n'
 
-	for host in self.hunreachs: 
-	    if self.hunreachs[host]>1: u_list.append(host)
+	top=self.hunreachs.most_common()
+	for host,alerts in top:
+	    if alerts>1: u_list.append(host)
 	if u_list:
 	    comment+='These hosts have been repeatedly unreachable during the past '+str(self.t_lapse/3600)+' hours:\n'
 	    unreach_string='\n'.join(u_list)
