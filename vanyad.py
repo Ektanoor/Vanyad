@@ -167,7 +167,6 @@ class TakeAction:
 	    self.sender.send(msg,contacts,netcon)
 
 
-
 if __name__ == '__main__':
     guard=Blacklist()
     guard.ack_host()
