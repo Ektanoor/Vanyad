@@ -42,7 +42,8 @@ class CheckServicesLogs(ConnectLivestatus):
 	self.config=ReadConf()
 	t_check=time.time()-self.t_lapse
 	t_stamp=str(round(t_check)).rstrip('0').rstrip('.')
-        self.status=self.get_query('log',['host_name','service_description','state','state_type','type','attempt','current_service_max_check_attempts'],['time >= '+t_stamp,'class = 1'],'WaitTrigger: log')
+        self.status=self.get_query('log',['host_name','service_description','state','state_type','type','attempt','current_service_max_check_attempts'],
+				    ['time >= '+t_stamp,'class = 1'],'WaitTrigger: log')
         if self.go_black: self.blacklist=OpenShelves('blacklist')
 
 

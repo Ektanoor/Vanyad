@@ -18,32 +18,42 @@
 import numpy
 import time
 import shelve
+from scipy import stats
+from collections import defaultdict
 from matplotlib import pyplot
 """The mathplotlib insertion here is temporary
 """
-from vanyad_functions import *
-from vanyad_classic import *
-from vanyad_comms import *
-from vanyad_snmp import *
-from vanyad_grid import *
-from vanyad_host_logs import *
-
+from vanyad_nagcinga import *
 
 #class IncidentFrequencies()
 
-class CheckDelays1(ConnectLivestatus):
+class CheckGroupDelays(ConnectLivestatus):
     status=[]
     def __init__(self):
 	ConnectLivestatus.__init__(self)
+
+    def check_latencies(self):
+	latencies=defaultdict(list)
 	self.status=self.get_query('hosts',
-			('host_name','last_check','latency','contacts'),
+			('host_name','groups','latency','execution_time','contacts'),
 			()
 			)
+	for host_name,groups,latency,execution_time,contacts in self.status:
+	    for group in groups:
+		latencies[group].append(execution_time)
 
-#    def check_latencies(self)
-#	for host_name,last_check,latency,contacts in self.status:
-#	    
-#	return latencies
+	for group in latencies: 
+	    hl=numpy.array(latencies[group])
+	    lmedian=numpy.median(hl)
+	    lm=stats.mode(hl)
+	    for a in lm[0]:
+		lmode=a
+	    laverage=numpy.average(hl)
+	    lmin=numpy.min(hl)
+	    lmax=numpy.max(hl)
+	    print(group,round(lmedian,2),round(lmode,2),round(laverage,2),round(lmin,2),round(lmax,2))
+
+
 
 class CheckDelays2(ConnectLivestatus):
     t_lapse=86400
@@ -59,15 +69,83 @@ class CheckDelays2(ConnectLivestatus):
 			)
 	for host_name,current_host_last_check,current_service_last_check,current_host_latency,current_service_latency in self.status:
 	    latencies.append(current_host_latency)
-#	    latencies.append(current_service_latency)
-	print(latencies)
+	    latencies.append(current_service_latency)
+#	print(latencies)
 	hl=numpy.array(latencies)
-	lmedian=numpy.median(hl)
-	lmode=numpy.mode(hl)
-	laverage=numpy.average(hl)
-	lmin=numpy.min(hl)
-	lmax=numpy.max(hl)
-	print(lmedian,lmode,laverage,lmin,lmax)
+	lmedian=round(numpy.median(hl))
+	lm=stats.mode(hl)
+	for a in lm[0]:
+	    lmode=round(a)
+	laverage=round(numpy.average(hl))
+	lmin=round(numpy.min(hl))
+	lmax=round(numpy.max(hl))
+	print(round(lmedian,2),round(lmode,2),round(laverage,2),round(lmin,2),round(lmax,2))
+
+class CheckPerfICMP(ConnectLivestatus):
+    perf_data=None
+
+    def __init__(self):
+	ConnectLivestatus.__init__(self)
+
+    def check_icmp(self):
+	rta_series=[]
+	self.status=self.get_query('hosts',
+			('host_name','perf_data','contacts'),
+			()
+			)
+	for host_name,perf_data,contacts in self.status:
+	    line=perf_data.split(';')
+	    for data in line:
+		if 'rta' in data:
+		    rta=float(data[4:-2])
+		    rta_series.append(rta)
+	rta_array=numpy.array(rta_series)
+	rmedian=numpy.median(rta_array)
+	r=stats.mode(rta_array)
+	for a in r[0]:
+	    rmode=a
+	raverage=numpy.average(rta_array)
+	rmin=numpy.min(rta_array)
+	rmax=numpy.max(rta_array)
+	print(round(rmedian,2),round(rmode,2),round(raverage,2),round(rmin,2),round(rmax,2))
+
+class CheckPerfICMPGroups(ConnectLivestatus):
+    perf_data=None
+
+    def __init__(self):
+	ConnectLivestatus.__init__(self)
+
+    def check_icmp(self):
+	rta_series=defaultdict(list)
+	self.status=self.get_query('hosts',
+			('host_name','groups','perf_data','contacts'),
+			()
+			)
+	for host_name,groups,perf_data,contacts in self.status:
+	    line=perf_data.split(';')
+	    for data in line:
+		if 'rta' in data: rta=float(data[4:-2])
+	    for group in groups: rta_series[group].append(rta)
+
+	for group in rta_series:
+	    rta_array=numpy.array(rta_series[group])
+	    rmedian=numpy.median(rta_array)
+	    r=stats.mode(rta_array)
+	    for a in r[0]:
+		rmode=a
+	    raverage=numpy.average(rta_array)
+	    rmin=numpy.min(rta_array)
+	    rmax=numpy.max(rta_array)
+	    print(group,round(rmedian,2),round(rmode,2),round(raverage,2),round(rmin,2),round(rmax,2))
+
+#[u'cube-zorge47-3', u'rta=0.766ms;3000.000;5000.000;0; pl=0%;80;100;; rtmax=0.816ms;;;; rtmin=0.724ms;;;;', 
 
 if __name__ == '__main__':
+    bit=CheckGroupDelays()
+    bit.check_latencies()
     bit=CheckDelays2()
+    bit=CheckPerfICMP()
+    bit.check_icmp()
+    bit=CheckPerfICMPGroups()
+    bit.check_icmp()
+    
