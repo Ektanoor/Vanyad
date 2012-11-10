@@ -131,7 +131,7 @@ class SendMsg:
 	if debug:
 	    contacts2=[]
 	    for contact in contacts:
-		contacts2.append(self.xmpp_dict[contact])
+		if contact in self.xmpp_dict: contacts2.append(self.xmpp_dict[contact])
 	    self.txt.send(msg,contacts2)
 	if self.jabber and netcon>1:
 	    contacts2=[]
