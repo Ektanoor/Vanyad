@@ -93,7 +93,7 @@ class PortChecks(TheGrid):
 			    change_str=str(last_change)+' minutes'
 			warn_lines.append('Last change: '+change_str)
 			speed=int(state['speed'])
-			speed/=1000000
+			#speed/=1000000
 			warn_lines.append('Statistics: ')
 			warn_lines.append('Speed='+str(speed)+'Mbps')
 			warn_lines.append('Ingress='+stats['ingress']+' octets')
@@ -165,6 +165,7 @@ class TakeAction:
 		'\nHosts affected:\n'+host_string+  \
 	    '\n\nTime:'+time.asctime(time.localtime(time.time()))+'\n'
 	    self.sender.send(msg,contacts,netcon)
+
 
 
 if __name__ == '__main__':

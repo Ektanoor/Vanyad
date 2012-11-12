@@ -22,6 +22,7 @@ class SNMPCrawler:
     snmpIfDescr='.1.3.6.1.2.1.2.2.1.2';
     snmpIfAlias='.1.3.6.1.2.1.31.1.1.1.18';
     snmpIfSpeed='.1.3.6.1.2.1.2.2.1.5';
+    snmpIfHighSpeed='.1.3.6.1.2.1.31.1.1.1.15';
     snmpIfAdminStatus='.1.3.6.1.2.1.2.2.1.7';
     states_IfAdminStatus={ '1':'up', '2':'down', '3':'testing'}
     snmpIfOperStatus='.1.3.6.1.2.1.2.2.1.8';
@@ -59,7 +60,7 @@ class SNMPCrawler:
 				netsnmp.Varbind(self.snmpIfAdminStatus,self.iid),
 				netsnmp.Varbind(self.snmpIfOperStatus,self.iid),
 				netsnmp.Varbind(self.snmpIfLastChange,self.iid),
-				netsnmp.Varbind(self.snmpIfSpeed,self.iid)
+				netsnmp.Varbind(self.snmpIfHighSpeed,self.iid)
 				)
 	self.session.get(pstate)
 	ps=[p.val for p in pstate]
