@@ -71,7 +71,7 @@ class VerifyLiveClassic():
 	final_msg='\n'
 	if time.time()-self.ready_time>max_time and self.msgs:
 	    for host in self.msgs: final_msg+=self.msgs[host]+'\n'
-	    self.sender.send(final_msg,self.config.monitors,netcon)
+	    self.sender.send('Message sent',self.config.monitors,netcon)
 	    self.ready_time=time.time()
 	    self.msgs={}
 	    syslog.syslog(final_msg)
