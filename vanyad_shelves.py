@@ -81,6 +81,11 @@ class ReadConf:
 	    self.contacts=contact_string.split(',')
 	else: self.user='admin'
 
+	if config.has_option('contacts','monitors'): 
+	    contact_string=config.get('contacts', 'monitors')
+	    self.monitors=contact_string.split(',')
+	else: self.user='admin'
+
 	if config.has_option('snmp','community'): self.snmp_community=config.get('snmp', 'community')
 	else: self.snmp_community='public'
 
@@ -112,11 +117,17 @@ class OpenShelves:
     """Things like blacklists, historical records and so. We need some memory here..."""
     lsts=[]
     def __init__(self,shelve_name):
-	blacklists=('hosts','services')
 	sv = shelve.open(shelve_name)
 	if shelve_name=='blacklist':
+	    blacklists=('hosts','services')
 	    for blacklist in blacklists:
 		if sv.has_key(blacklist): self.lsts+=sv[blacklist]
+	if shelve_name=='latlon':
+	    if sv.has_key('lat') or sv.has_key('lon'):
+		lat=sv['lat']
+		host_lat=lat.keys()
+		lon=sv['lon']
+		host_lon=lon.keys()
 
     def __del__(self):
 	sv.close()
