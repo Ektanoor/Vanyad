@@ -84,7 +84,11 @@ class ReadConf:
 	if config.has_option('contacts','monitors'): 
 	    contact_string=config.get('contacts', 'monitors')
 	    self.monitors=contact_string.split(',')
-	else: self.user='admin'
+	else: self.monitors='admin'
+
+	if config.has_option('geo','city'): 
+	    self.city=config.get('geo', 'city')
+	else: self.city='Atlantis'
 
 	if config.has_option('snmp','community'): self.snmp_community=config.get('snmp', 'community')
 	else: self.snmp_community='public'

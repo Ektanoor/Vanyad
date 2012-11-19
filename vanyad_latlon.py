@@ -22,13 +22,16 @@ import urllib
 import shelve
 import json
 
-city=u'Казань'
+city=u''
 
 class GenerateCoordinates(ConnectLivestatus):
     """This class grabs addresses from custom variable _physaddr...
     """
+
+    config=None
     status=[]
     def __init__(self):
+	self.config=ReadConf()
 	ConnectLivestatus.__init__(self)
 
     def GrabAddresses(self):
@@ -40,14 +43,13 @@ class GenerateCoordinates(ConnectLivestatus):
 	    if 'LOCATION' in custom_variables: locations[custom_variables['LOCATION']].append(host_name)
 	for location in locations:
 	    location=location.replace(',','+')
-	    url='/search?q=+'+location+',+'+city+'&format=json&countrycodes=ru&polygon=0&addressdetails=1'
+	    url='/search?q=+'+location+',+'+self.config.city+'&format=json&countrycodes=ru&polygon=0&addressdetails=1'
 	    url=urllib.quote(url.encode('utf-8'),',/+=&?')
 	    conn.request('GET',url)
 	    response=conn.getresponse()
 	    if response.status==200:
 		data=response.read()
-		if data:
-	    print(data)
+		if data: print(data)
 	conn.close()
 
 if __name__ == '__main__':
