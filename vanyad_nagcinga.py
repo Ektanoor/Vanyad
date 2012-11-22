@@ -50,32 +50,38 @@ class ConnectProlog(ConnectLivestatus):
 class ConnectNagCinga:
     """This class sends commands to Nagios/Icinga"""
     user=None
+    t=None
     f=None
+    commandfile=None
+    
     def __init__(self):
 	config=ReadConf()
 	self.user=config.user
-	commandfile=config.socket_command
-	t=pipes.Template()
-	self.f=t.open(commandfile, 'w')
+	self.commandfile=config.socket_command
+	self.t=pipes.Template()
 
     def acknowledge_host(self,host,sticky,notify,persistent,comment):
 	t_check=time.time()
 	t_stamp=int(str(round(t_check)).rstrip('0').rstrip('.'))
         msg='['+str(t_stamp)+'] ACKNOWLEDGE_HOST_PROBLEM;'+host+';'+str(sticky)+';'+str(notify)+';'+str(persistent)+';'+self.user+';'+comment+'\n'
+	self.f=self.t.open(self.commandfile, 'w')
 	self.f.write(msg)
+	self.f.close()
 
     def acknowledge_service(self,host,service,sticky,notify,persistent,comment):
 	t_check=time.time()
 	t_stamp=int(str(round(t_check)).rstrip('0').rstrip('.'))
         msg='['+str(t_stamp)+'] ACKNOWLEDGE_SVC_PROBLEM;'+host+';'+service+';'+str(sticky)+';'+str(notify)+';'+str(persistent)+';'+self.user+';'+comment+'\n'
+	self.f=self.t.open(self.commandfile, 'w')
 	self.f.write(msg)
+	self.f.close()
 
     def process_host(self,host,state,comment):
 	t_check=time.time()
 	t_stamp=int(str(round(t_check)).rstrip('0').rstrip('.'))
 	msg='['+str(t_stamp)+'] PROCESS_HOST_CHECK_RESULT;'+host+';'+state+';'+comment+'\n'
+	self.f=self.t.open(self.commandfile, 'w')
 	self.f.write(msg)
-
-    def __del__(self):
 	self.f.close()
+
 

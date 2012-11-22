@@ -35,7 +35,7 @@ from vanyad_comms import *
 #			)
 #	for host_name,state,state_type,current_attempt,last_state_change,check_options in self.status:
 
-class VerifyLiveClassic():
+class VerifyLiveClassic:
     config=None
     sender=None
     ready_time=0
@@ -55,7 +55,7 @@ class VerifyLiveClassic():
 	if (state=='DOWN' or state=='UNREACHABLE') and state_type=='SOFT':
 	    if host in self.hosts and host not in self.hosts_alerted:
 		diff_time=cur_time-self.hosts[host]
-		if diff_time>min_time and int(attempt)>1: 
+		if diff_time>min_time and int(attempt)>=1: 
 		    self.hosts_alerted.append(host)
 		    h_time=time.asctime(time.localtime(time.time()))
 		    msg=host+' - '+address+' - '+h_time
@@ -76,7 +76,7 @@ class VerifyLiveClassic():
 	    self.msgs={}
 	    syslog.syslog('Message sent')
 
-class GoDaemon():
+class GoDaemon:
     pipe=None
     t_lapse=600
 
@@ -133,10 +133,9 @@ class GoDaemon():
 	    if time.time()-t_point>self.t_lapse: break
 
     def __del__(self):
-	if self.pipe: 
-	    self.pipe.close()
-	    os.remove(pid_file)
-	    syslog.syslog('Daemon stopped')
+	if self.pipe: self.pipe.close()
+	os.remove(pid_file)
+	syslog.syslog('Daemon stopped')
 
 
 def MakeDetach():

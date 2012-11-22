@@ -120,6 +120,8 @@ class ReadConf:
 class OpenShelves:
     """Things like blacklists, historical records and so. We need some memory here..."""
     lsts=[]
+    lat={}
+    lon={}
     def __init__(self,shelve_name):
 	sv = shelve.open(shelve_name)
 	if shelve_name=='blacklist':
@@ -128,10 +130,8 @@ class OpenShelves:
 		if sv.has_key(blacklist): self.lsts+=sv[blacklist]
 	if shelve_name=='latlon':
 	    if sv.has_key('lat') or sv.has_key('lon'):
-		lat=sv['lat']
-		host_lat=lat.keys()
-		lon=sv['lon']
-		host_lon=lon.keys()
+		self.lat=sv['lat']
+		self.lon=sv['lon']
 
     def __del__(self):
 	sv.close()
