@@ -136,6 +136,8 @@ class GoDaemon():
 	if self.pipe: 
 	    self.pipe.close()
 	    os.remove(pid_file)
+	    syslog.syslog('Daemon stopped')
+
 
 def MakeDetach():
     try: pid = os.fork()
