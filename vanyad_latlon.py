@@ -15,6 +15,7 @@
 # Boston, MA 02110-1301 USA.
 
 #from __future__ import unicode_literals
+from __future__ import print_function
 from vanyad_nagcinga import *
 from vanyad_shelves import *
 from collections import defaultdict
@@ -32,73 +33,108 @@ class GenerateCoordinates(ConnectLivestatus):
     config=None
     latlon=None
     status=[]
+    default_lat=None
+    default_lon=None
+
     def __init__(self):
 	self.config=ReadConf()
 	ConnectLivestatus.__init__(self)
+	coors=self.config.no_data.split(',')
+	self.default_lat=float(coors[0])
+	self.default_lon=float(coors[1])
+
+    def __del__(self):
+	self.latlon.__del__()
 
     def GrabAddresses(self):
+	location_keys=None
+	postcode=None
+	ambiguous_data='ambiguous_data.txt'
+
+	f=open(ambiguous_data,'w')
 	self.latlon=OpenShelves('latlon')
-	
-	locations=defaultdict(list)
+	if self.latlon: location_keys=self.latlon.osm.keys()
+	self.locations=defaultdict(list)
 	conn=httplib.HTTPConnection("nominatim.openstreetmap.org")
 	status=self.get_query('hosts',('host_name','custom_variables'),())
 	for host_name,custom_variables in status:
-	    if 'LOCATION' in custom_variables: locations[custom_variables['LOCATION']].append(host_name)
-	for location in locations:
-	    if locations[location] in self.latlon.lat: continue
-	    road=location.split(',')[0]
-	    house_number=location.split(',')[1]
-	    loc=location.replace(',','+')
-	    url='/search?q=+'+loc+',+'+self.config.city+'&format=json&countrycodes=ru&polygon=0&addressdetails=1'
+	    if 'LOCATION' in custom_variables:
+		self.locations[custom_variables['LOCATION']].append(host_name)
+	for location in self.locations:
+	    if location in location_keys: continue
+	    #String format is country_code,state,city/county,street/road,<postcode>
+	    #postcode is a safeguard for ambiguities on some cities, ex. 7 streets with the same name.
+	    #Other identificators are too weak to solve such ambiguities.
+	    #It shall be used only when such ambiguities occur.
+	    loc_details=location.split(',')
+	    country=loc_details[0]
+	    state=loc_details[1]
+	    county=loc_details[2]
+	    road=loc_details[3]
+	    house_number=loc_details[4]
+	    if len(loc_details)==6: postcode=loc_details[5]
+	    url='/search?q=+'+house_number+'+'+road+',+'+county
+	    if postcode: url+=',+'+postcode
+	    url+='&format=json&countrycodes='+country+'&polygon=0&addressdetails=1'
 	    url=urllib.quote(url.encode('utf-8'),',/+=&?')
 	    conn.request('GET',url)
 	    response=conn.getresponse()
 	    if response.status==200:
 		data=response.read()
-		data=json.loads(data)
-		if data:
+		if not data: print('No data for: '+str(location)+'\n',file=f)
+		else:
+		    data=json.loads(data)
+		    self.latlon.osm[location]=data
 		    for item in data:
+			have_house=0
 			for item2 in item:
+			    if item2=='lat' and not have_house: self.latlon.lat[location]=float(item[item2])
+			    if item2=='lon' and not have_house: self.latlon.lon[location]=float(item[item2])
 			    if item2=='address':
-				for detail in item[item2]: 
+				for detail in item[item2]:
 				    i=item[item2][detail].decode('utf-8')
-				    if detail=='road': rd=i
+				    if detail=='road':
+					if road not in i: print('Wrong road for: '+str(location)+'\n'+str(i)+'\n'+str(data)+'\n',file=f)
 				    if detail=='house_number':
-					if i!=house_number: i=house_number
-			    if item2=='lat': self.latlon.lat[locations[location]]=item[item2]
-			    if item2=='lon': self.latlon.lon[locations[location]]=item[item2]
-#			    else: print(item2,item[item2])
+					if i==house_number: have_house=1
+					else: msg='Wrong house number for: '+str(location)+'\n'+str(i)+'\n'+str(data)+'\n'
+				    else: msg='No house number for: '+str(location)+'\n'+str(i)+'\n'+str(data)+'\n'
+				    if postcode and detail=='postcode': have_house=1
+			if not have_house: print(msg,file=f)
 	conn.close()
+	f.close()
 
-    def TestLoc(self):
-	for host in self.latlon.lat:
-	    print(host,self.latlon.lat[host])
-	    print(host,self.latlon.lon[host])
+    def MakeGeneric(self):
+	outcasts='outcasts.txt'
+	f=open(outcasts,'w')
+	for location in self.locations:
+	    for host in self.locations[location]:
+		if location in self.latlon.lat:
+		    nagvis=(host,location,str(self.latlon.lat[location]),str(self.latlon.lon[location]))
+		    print(';'.join(nagvis))
+		else: print(host,file=f)
+	f.close()
+
+    def MakeSynthetic(self):
+	for location in self.locations:
+	    if self.latlon.lat[location]>self.default_lat+self.config.step: lat=self.default_lat+self.config.step
+	    elif self.latlon.lat[location]<self.default_lat-self.config.step: lat=self.default_lat-self.config.step
+	    else: lat=self.latlon.lat[location]
+	    if self.latlon.lon[location]>self.default_lon+self.config.step: lon=self.default_lon+self.config.step
+	    elif self.latlon.lon[location]<self.default_lon-self.config.step: lon=self.default_lon-self.config.step
+	    else: lon=self.latlon.lon[location]
+	    for host in self.locations[location]:
+		nagvis=(host,location,str(lat),str(lon))
+		print(';'.join(nagvis))
+
 
 if __name__ == '__main__':
-    reload(sys) 
+    reload(sys)
     sys.setdefaultencoding('utf-8') 
     bit=GenerateCoordinates()
     bit.GrabAddresses()
-    bit.TestLoc()
+    bit.MakeGeneric()
+#    bit.MakeSynthetic()
+    bit.__del__()
 
 
-"""
-
->>> conn.close()
-
-
-self.blacklist=OpenShelves('blacklist')
-    status=self.get_query('hosts',('host_name','address','custom_variables','state','parents'),())
-    for host_name, address, custom_variables, state, parents in status:
-            self.addresses[host_name]=address
-        if 'CONNECTED' in custom_variables:
-                            self.prolog.assertz("ports('"+host_name+"','"+custom_variables['CONNECTED']+"')")
-                                            if state==0: s_state='UP'
-                                        elif state==1: s_state='DOWN'
-                                        elif state==2: s_state='UNREACHABLE'
-                                        self.prolog.assertz("state('"+host_name+"','"+s_state+"')")
-                                        for parent in parents:
-                                        self.prolog.assertz("parent('"+parent+"','"+host_name+"')")
-
-"""

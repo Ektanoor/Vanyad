@@ -86,9 +86,13 @@ class ReadConf:
 	    self.monitors=contact_string.split(',')
 	else: self.monitors='admin'
 
-	if config.has_option('geo','city'): 
-	    self.city=config.get('geo', 'city')
-	else: self.city='Atlantis'
+	if config.has_option('geo','no_data'): 
+	    self.no_data=config.get('geo', 'no_data')
+	else: self.no_data='0,0'
+
+	if config.has_option('geo','step'): 
+	    self.step=float(config.get('geo', 'step'))
+	else: self.step=0.0
 
 	if config.has_option('snmp','community'): self.snmp_community=config.get('snmp', 'community')
 	else: self.snmp_community='public'
@@ -122,17 +126,26 @@ class OpenShelves:
     lsts=[]
     lat={}
     lon={}
+    osm={}
+    sv=None
+    working_shelve=None
     def __init__(self,shelve_name):
-	sv = shelve.open(shelve_name)
+	self.sv = shelve.open(shelve_name)
+	self.working_shelve=shelve_name
 	if shelve_name=='blacklist':
 	    blacklists=('hosts','services')
 	    for blacklist in blacklists:
-		if sv.has_key(blacklist): self.lsts+=sv[blacklist]
+		if self.sv.has_key(blacklist): self.lsts+=self.sv[blacklist]
 	if shelve_name=='latlon':
-	    if sv.has_key('lat') or sv.has_key('lon'):
-		self.lat=sv['lat']
-		self.lon=sv['lon']
+	    if self.sv.has_key('lat') or self.sv.has_key('lon'):
+		self.lat=self.sv['lat']
+		self.lon=self.sv['lon']
+	    if self.sv.has_key('osm'): self.osm=self.sv['osm']
 
     def __del__(self):
-	sv.close()
+	if self.working_shelve=='latlon':
+	    self.sv['lat']=self.lat
+	    self.sv['lon']=self.lon
+	    self.sv['osm']=self.osm
+	self.sv.close()
 
