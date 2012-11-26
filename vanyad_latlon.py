@@ -31,41 +31,46 @@ class GenerateCoordinates(ConnectLivestatus):
     """
 
     config=None
-    latlon=None
     status=[]
+    lat={}
+    lon={}
+    mapdata=None
     default_lat=None
     default_lon=None
 
     def __init__(self):
 	self.config=ReadConf()
 	ConnectLivestatus.__init__(self)
+	self.mapdata=OpenShelves('osm')
 	coors=self.config.no_data.split(',')
 	self.default_lat=float(coors[0])
 	self.default_lon=float(coors[1])
 
     def __del__(self):
-	self.latlon.__del__()
+	self.mapdata.__del__()
 
     def GrabAddresses(self):
 	location_keys=None
 	postcode=None
-	ambiguous_data='ambiguous_data.txt'
 
-	f=open(ambiguous_data,'w')
-	self.latlon=OpenShelves('latlon')
-	if self.latlon: location_keys=self.latlon.osm.keys()
+#We need these keys to avoid beating OSM with repeated queries
+	if self.mapdata: location_keys=self.mapdata.osm.keys()
+
+#Get data from Nagios/Icinga through livestatus.
+#String format is country_code,state,city/county,street/road,<postcode>
+#postcode is a safeguard for ambiguities on some cities, ex. 7 streets with the same name.
+#Other identificators are too weak to solve such ambiguities.
+#It shall be used only when such ambiguities occur.
 	self.locations=defaultdict(list)
-	conn=httplib.HTTPConnection("nominatim.openstreetmap.org")
 	status=self.get_query('hosts',('host_name','custom_variables'),())
 	for host_name,custom_variables in status:
 	    if 'LOCATION' in custom_variables:
 		self.locations[custom_variables['LOCATION']].append(host_name)
+
+#No maps here. These requests get OSM data only.
+	conn=httplib.HTTPConnection("nominatim.openstreetmap.org")
 	for location in self.locations:
-	    if location in location_keys: continue
-	    #String format is country_code,state,city/county,street/road,<postcode>
-	    #postcode is a safeguard for ambiguities on some cities, ex. 7 streets with the same name.
-	    #Other identificators are too weak to solve such ambiguities.
-	    #It shall be used only when such ambiguities occur.
+	    if location in location_keys: continue	#Avoid requests for data we already have
 	    loc_details=location.split(',')
 	    country=loc_details[0]
 	    state=loc_details[1]
@@ -84,45 +89,93 @@ class GenerateCoordinates(ConnectLivestatus):
 		if not data: print('No data for: '+str(location)+'\n',file=f)
 		else:
 		    data=json.loads(data)
-		    self.latlon.osm[location]=data
-		    for item in data:
-			have_house=0
-			for item2 in item:
-			    if item2=='lat' and not have_house: self.latlon.lat[location]=float(item[item2])
-			    if item2=='lon' and not have_house: self.latlon.lon[location]=float(item[item2])
-			    if item2=='address':
-				for detail in item[item2]:
-				    i=item[item2][detail].decode('utf-8')
-				    if detail=='road':
-					if road not in i: print('Wrong road for: '+str(location)+'\n'+str(i)+'\n'+str(data)+'\n',file=f)
-				    if detail=='house_number':
-					if i==house_number: have_house=1
-					else: msg='Wrong house number for: '+str(location)+'\n'+str(i)+'\n'+str(data)+'\n'
-				    else: msg='No house number for: '+str(location)+'\n'+str(i)+'\n'+str(data)+'\n'
-				    if postcode and detail=='postcode': have_house=1
-			if not have_house: print(msg,file=f)
+		    self.mapdata.osm[location]=data
 	conn.close()
+
+#On Nominatim fields inside records do not seem to be strictly positioned. Besides, the system is flexible enough to give data that partially fits the query.
+#So, to avoid multiple conflicts, first we read a whole record and then check.
+#The gathering algorithm here corresponds to the way Nominatim stores data on Russian entities. In other countries your mileage may vary.
+    def FillData(self):
+	postcode=None
+	ambiguous_data='ambiguous_data.txt'
+#Check ambiguous_data.txt for unexact or questionable data
+	f=open(ambiguous_data,'w')
+	for location in self.mapdata.osm:
+	    loc_details=location.split(',')
+	    road=loc_details[3]
+	    house_number=loc_details[4]
+	    if len(loc_details)==6: postcode=loc_details[5]
+	    for item in self.mapdata.osm[location]:
+		cur_country_code=None
+		cur_country=None
+		cur_administrative=None
+		cur_state=None
+		cur_county=None
+		cur_city_district=None
+		cur_suburb=None
+		cur_road=None
+		cur_house_number=None
+		cur_postcode=None
+		for item2 in item:
+		    other_fields={}
+		    if item2=='lat': cur_lat=float(item[item2])
+		    if item2=='lon': cur_lon=float(item[item2])
+		    if item2=='boundingbox': cur_bbox=item[item2]
+		    if item2=='address':
+			for detail in item[item2]:
+			    i=item[item2][detail].decode('utf-8')
+			    if detail=='country_code': cur_country_code=i
+			    elif detail=='country': cur_country=i
+			    elif detail=='administrative': cur_administrative=i
+			    elif detail=='state': cur_state=i
+			    elif detail=='county': cur_county=i
+			    elif detail=='city_district': cur_city_district=i
+			    elif detail=='suburb': cur_suburb=i
+			    elif detail=='road': cur_road=i
+			    elif detail=='house_number': cur_house_number=i
+			    elif detail=='postcode': cur_postcode=i
+#Some records have custom fields. We still have to study them.
+			    else: other_fields[detail]=i
+
+		self.lat[location]=cur_lat
+		self.lon[location]=cur_lon
+
+		if other_fields:
+		    print('Custom fields found for '+str(location)+':\n',file=f)
+		    for field in other_fields: print(field+': '+other_fields[field]+'\n',file=f)
+		    print(str(self.mapdata.osm[location])+'\n',file=f)
+
+		if not cur_road: print('No road for: '+str(location)+'\n'+str(self.mapdata.osm[location])+'\n',file=f)
+		elif road not in cur_road: print('Wrong road for: '+str(location)+'\n'+str(cur_road)+'\n'+str(self.mapdata.osm[location])+'\n',file=f)
+		if not cur_house_number: msg='No house number for: '+str(location)+'\n'+str(self.mapdata.osm[location])+'\n'
+		elif house_number!=cur_house_number: msg='Wrong house number for: '+str(location)+'\n'+str(cur_house_number)+'\n'+str(self.mapdata.osm[location])+'\n'
+		elif postcode and postcode!=cur_postcode: pass
+		else: continue
+		print(msg,file=f)
 	f.close()
+
+#u'house_number': u'1', u'country': u'Russian Federation', u'county': u'Казань', u'suburb': u'Козья слобода', u'state': u'Татарстан', u'city_district': u'Киро
+#вский район', u'road': u'улица Декабристов', u'country_code': u'ru', u'administrative': u'Volga Federal District', u'bank': u'АК БАРС БАНК', u'postcode': u'420066'
 
     def MakeGeneric(self):
 	outcasts='outcasts.txt'
 	f=open(outcasts,'w')
 	for location in self.locations:
 	    for host in self.locations[location]:
-		if location in self.latlon.lat:
-		    nagvis=(host,location,str(self.latlon.lat[location]),str(self.latlon.lon[location]))
+		if location in self.lat:
+		    nagvis=(host,location,str(self.lat[location]),str(self.lon[location]))
 		    print(';'.join(nagvis))
 		else: print(host,file=f)
 	f.close()
 
     def MakeSynthetic(self):
 	for location in self.locations:
-	    if self.latlon.lat[location]>self.default_lat+self.config.step: lat=self.default_lat+self.config.step
-	    elif self.latlon.lat[location]<self.default_lat-self.config.step: lat=self.default_lat-self.config.step
-	    else: lat=self.latlon.lat[location]
-	    if self.latlon.lon[location]>self.default_lon+self.config.step: lon=self.default_lon+self.config.step
-	    elif self.latlon.lon[location]<self.default_lon-self.config.step: lon=self.default_lon-self.config.step
-	    else: lon=self.latlon.lon[location]
+	    if self.lat[location]>self.default_lat+self.config.step: lat=self.default_lat+self.config.step
+	    elif self.lat[location]<self.default_lat-self.config.step: lat=self.default_lat-self.config.step
+	    else: lat=self.lat[location]
+	    if self.lon[location]>self.default_lon+self.config.step: lon=self.default_lon+self.config.step
+	    elif self.lon[location]<self.default_lon-self.config.step: lon=self.default_lon-self.config.step
+	    else: lon=self.lon[location]
 	    for host in self.locations[location]:
 		nagvis=(host,location,str(lat),str(lon))
 		print(';'.join(nagvis))
@@ -133,6 +186,7 @@ if __name__ == '__main__':
     sys.setdefaultencoding('utf-8') 
     bit=GenerateCoordinates()
     bit.GrabAddresses()
+    bit.FillData()
     bit.MakeGeneric()
 #    bit.MakeSynthetic()
     bit.__del__()
