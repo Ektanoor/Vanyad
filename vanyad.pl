@@ -12,3 +12,4 @@ paradoxes(X,Y) :- parent(X,Y),state(Y,'UP'),\+ state(X,'UP'),\+ (parent(C,Y),sta
 
 blocked(X,Y) :- \+ state(Y,'UP'),descendants(X,Y),state(X,'DOWN').
 
+

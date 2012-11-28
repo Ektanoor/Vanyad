@@ -19,11 +19,13 @@ from __future__ import print_function
 from vanyad_nagcinga import *
 from vanyad_shelves import *
 from collections import defaultdict
+from unidecode import unidecode
 import httplib
 import urllib
 import shelve
 import json
 import sys
+import os
 
 
 class GenerateCoordinates(ConnectLivestatus):
@@ -97,6 +99,15 @@ class GenerateCoordinates(ConnectLivestatus):
 #The gathering algorithm here corresponds to the way Nominatim stores data on Russian entities. In other countries your mileage may vary.
     def FillData(self):
 	postcode=None
+	self.houses=defaultdict(list)
+	self.roads=defaultdict(list)
+	self.suburbs=defaultdict(list)
+	self.districts=defaultdict(list)
+	self.cities=defaultdict(list)
+	self.counties=defaultdict(list)
+	self.administratives=defaultdict(list)
+	self.countries=defaultdict(list)
+	self.hosts=defaultdict(tuple)
 	ambiguous_data='ambiguous_data.txt'
 #Check ambiguous_data.txt for unexact or questionable data
 	f=open(ambiguous_data,'w')
@@ -110,6 +121,7 @@ class GenerateCoordinates(ConnectLivestatus):
 		cur_country=None
 		cur_administrative=None
 		cur_state=None
+		cur_city=None
 		cur_county=None
 		cur_city_district=None
 		cur_suburb=None
@@ -129,6 +141,7 @@ class GenerateCoordinates(ConnectLivestatus):
 			    elif detail=='administrative': cur_administrative=i
 			    elif detail=='state': cur_state=i
 			    elif detail=='county': cur_county=i
+			    elif detail=='city': cur_city=i
 			    elif detail=='city_district': cur_city_district=i
 			    elif detail=='suburb': cur_suburb=i
 			    elif detail=='road': cur_road=i
@@ -152,34 +165,101 @@ class GenerateCoordinates(ConnectLivestatus):
 		elif postcode and postcode!=cur_postcode: pass
 		else: continue
 		print(msg,file=f)
-	f.close()
+#It looks crazy? Yes, because IT IS crazy! Can you realize a city with 7 completely different roads, officialy carrying one and the same name? Or how many Moscows exist on Earth? 
+#Even Paris has a "twin" in the Urals. And it does not end here! Many big cities in ex-USSR have a "Moscow district". And what about something as a state or province? 
+#Searching for "just" California will give you three states in two different countries. Much as "just" Washington may stubbornly show some city called Seattle.
+#Portugal had a province called "Estremadura", which some use till today and sounding nearly as the Spanish "Extremadura". Mozambique has a "Gaza" province.
+#And even countries are not far from this, just try to look for "Guinea" or "Korea".
 
-#u'house_number': u'1', u'country': u'Russian Federation', u'county': u'Казань', u'suburb': u'Козья слобода', u'state': u'Татарстан', u'city_district': u'Киро
-#вский район', u'road': u'улица Декабристов', u'country_code': u'ru', u'administrative': u'Volga Federal District', u'bank': u'АК БАРС БАНК', u'postcode': u'420066'
+	    for host in self.locations[location]:
+		self.hosts[host]=(cur_lat,cur_lon,cur_bbox,cur_country_code,cur_country,cur_administrative,
+		    cur_state,cur_county,cur_city,cur_city_district,cur_suburb,cur_road,cur_house_number,cur_postcode)
+		self.houses[(cur_country_code,cur_administrative,cur_state,cur_county,cur_city,cur_city_district,cur_suburb,cur_road,cur_house_number,cur_postcode)].append(host)
+		if postcode: self.roads[(cur_country_code,cur_administrative,cur_state,cur_county,cur_city,cur_road,cur_postcode)].append(host)
+		else: self.roads[(cur_country_code,cur_administrative,cur_state,cur_county,cur_city,cur_road)].append(host)
+		self.suburbs[(cur_country_code,cur_administrative,cur_state,cur_county,cur_city,cur_city_district,cur_suburb)].append(host)
+		self.districts[(cur_country_code,cur_administrative,cur_state,cur_county,cur_city,cur_city_district)].append(host)
+		self.cities[(cur_country_code,cur_administrative,cur_state,cur_county,cur_city)].append(host)
+		self.counties[(cur_country_code,cur_administrative,cur_state,cur_county)].append(host)
+		self.administratives[(cur_country_code,cur_administrative)].append(host)
+		self.countries[cur_country].append(host)
+	f.close()
 
     def MakeGeneric(self):
 	outcasts='outcasts.txt'
+	locations='locations.txt'
 	f=open(outcasts,'w')
+	g=open(locations,'w')
 	for location in self.locations:
 	    for host in self.locations[location]:
 		if location in self.lat:
 		    nagvis=(host,location,str(self.lat[location]),str(self.lon[location]))
-		    print(';'.join(nagvis))
+		    print(';'.join(nagvis),file=g)
 		else: print(host,file=f)
+	g.close()
 	f.close()
 
-    def MakeSynthetic(self):
-	for location in self.locations:
-	    if self.lat[location]>self.default_lat+self.config.step: lat=self.default_lat+self.config.step
-	    elif self.lat[location]<self.default_lat-self.config.step: lat=self.default_lat-self.config.step
-	    else: lat=self.lat[location]
-	    if self.lon[location]>self.default_lon+self.config.step: lon=self.default_lon+self.config.step
-	    elif self.lon[location]<self.default_lon-self.config.step: lon=self.default_lon-self.config.step
-	    else: lon=self.lon[location]
-	    for host in self.locations[location]:
-		nagvis=(host,location,str(lat),str(lon))
-		print(';'.join(nagvis))
+    def Experimental(self):
+	maps='./maps'
+	geo='./geomap'
+	if not os.path.exists(maps): os.makedirs(maps)
+	if not os.path.exists(geo): os.makedirs(geo)
+	for road in self.roads:
+	    if road[-3]: roadname=str(road[-3])+'-'+str(road[-1])
+	    else: roadname=str(road[-4])+'-'+str(road[-1])
+	    u_roadname=unidecode(roadname.decode('utf8'))
+	    u_roadname=u_roadname.replace("'","")
+	    u_roadname=u_roadname.replace(".","")
+	    u_roadname=u_roadname.replace(' ','')
+	    m=open(maps+'/'+u_roadname+'.cfg','w')
+	    print('define global {',file=m)
+	    print('    sources=geomap',file=m)
+	    print('    alias='+roadname,file=m)
+	    print('    iconset=std_medium',file=m)
+	    print('    backend_id=live_1',file=m)
+	    print('    source_file='+u_roadname,file=m)
+	    print('    width=1600',file=m)
+	    print('    height=1400',file=m)
+	    print('    geomap_border=0.0',file=m)
+	    print('    geomap_zoom=10',file=m)
+	    print('}',file=m)
+	    m.close()
+	    g=open(geo+'/'+u_roadname+'.csv','w')
+	    for host in self.roads[road]:
+		nagvis=(host,roadname,str(self.hosts[host][0]),str(self.hosts[host][1]))
+		print(';'.join(nagvis),file=g)
+	    g.close()
 
+    def Experimental2(self):
+	maps='./maps'
+	geo='./geomap'
+	if not os.path.exists(maps): os.makedirs(maps)
+	if not os.path.exists(geo): os.makedirs(geo)
+	for district in self.districts:
+	    if district[-2]: districtname=str(district[-2])+'-'+str(district[-1])
+	    else: districtname=str(district[-3])+'-'+str(district[-1])
+	    u_districtname=unidecode(districtname.decode('utf8'))
+	    u_districtname=u_districtname.replace("'","")
+	    u_districtname=u_districtname.replace(".","")
+	    u_districtname=u_districtname.replace(' ','')
+	    m=open(maps+'/'+u_districtname+'.cfg','w')
+	    print('define global {',file=m)
+	    print('    sources=geomap',file=m)
+	    print('    alias='+districtname,file=m)
+	    print('    iconset=std_small',file=m)
+	    print('    backend_id=live_1',file=m)
+	    print('    source_file='+u_districtname,file=m)
+	    print('    width=1600',file=m)
+	    print('    height=1400',file=m)
+	    print('    geomap_border=0.0',file=m)
+#	    print('    geomap_zoom=10',file=m)
+	    print('}',file=m)
+	    m.close()
+	    g=open(geo+'/'+u_districtname+'.csv','w')
+	    for host in self.districts[district]:
+		nagvis=(host,districtname,str(self.hosts[host][0]),str(self.hosts[host][1]))
+		print(';'.join(nagvis),file=g)
+	    g.close()
 
 if __name__ == '__main__':
     reload(sys)
@@ -188,7 +268,7 @@ if __name__ == '__main__':
     bit.GrabAddresses()
     bit.FillData()
     bit.MakeGeneric()
-#    bit.MakeSynthetic()
+    bit.Experimental2()
     bit.__del__()
 
 
