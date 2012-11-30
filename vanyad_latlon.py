@@ -98,7 +98,6 @@ class GenerateCoordinates(ConnectLivestatus):
 #So, to avoid multiple conflicts, first we read a whole record and then check.
 #The gathering algorithm here corresponds to the way Nominatim stores data on Russian entities. In other countries your mileage may vary.
     def fill_data(self):
-	postcode=None
 	self.houses=defaultdict(list)
 	self.roads=defaultdict(list)
 	self.suburbs=defaultdict(list)
@@ -112,6 +111,7 @@ class GenerateCoordinates(ConnectLivestatus):
 #Check ambiguous_data.txt for unexact or questionable data
 	f=open(ambiguous_data,'w')
 	for location in self.mapdata.osm:
+	    postcode=None
 	    loc_details=location.split(',')
 	    road=loc_details[3]
 	    house_number=loc_details[4]
@@ -140,9 +140,14 @@ class GenerateCoordinates(ConnectLivestatus):
 			    elif detail=='country': cur_country=i
 			    elif detail=='administrative': cur_administrative=i
 			    elif detail=='state': cur_state=i
+#In certain regions county=city, with no 'city' on the records. Why, I really don't know. But one of these places is just here.
 			    elif detail=='county': cur_county=i
 			    elif detail=='city': cur_city=i
+#From docs, it seems that field 'village' always overlaps with 'city'. Presently there is no need to differ these fields
+			    elif detail=='village': cur_city=i
 			    elif detail=='city_district': cur_city_district=i
+#Here state_district is much the same as city_district, the difference is that it is applied to rural areas.
+			    elif detail=='state_district': cur_city_district=i
 			    elif detail=='suburb': cur_suburb=i
 			    elif detail=='road': cur_road=i
 			    elif detail=='house_number': cur_house_number=i
@@ -158,13 +163,15 @@ class GenerateCoordinates(ConnectLivestatus):
 		    for field in other_fields: print(field+': '+other_fields[field]+'\n',file=f)
 		    print(str(self.mapdata.osm[location])+'\n',file=f)
 
+		msg=None
 		if not cur_road: print('No road for: '+str(location)+'\n'+str(self.mapdata.osm[location])+'\n',file=f)
 		elif road not in cur_road: print('Wrong road for: '+str(location)+'\n'+str(cur_road)+'\n'+str(self.mapdata.osm[location])+'\n',file=f)
 		if not cur_house_number: msg='No house number for: '+str(location)+'\n'+str(self.mapdata.osm[location])+'\n'
-		elif house_number!=cur_house_number: msg='Wrong house number for: '+str(location)+'\n'+str(cur_house_number)+'\n'+str(self.mapdata.osm[location])+'\n'
+		elif house_number!=cur_house_number[:len(house_number)]:
+		    msg='Wrong house number for: '+str(location)+'\n'+str(cur_house_number)+'\n'+str(self.mapdata.osm[location])+'\n'
 		elif postcode and postcode!=cur_postcode: pass
 		else: continue
-		print(msg,file=f)
+		if msg: print(msg,file=f)
 
 #It looks crazy? Yes, because IT IS crazy! Can you realize a city with 7 completely different roads, officialy carrying one and the same name? Or how many Moscows exist on Earth? 
 #Even Paris has a "twin" in the Urals. And it does not end here! Many big cities in ex-USSR have a "Moscow district". And what about something as a state or province? 
@@ -271,16 +278,16 @@ class GenerateCoordinates(ConnectLivestatus):
 	    self.create_nagvis_conf('houses',name,self.houses[house])
 
 	for road in self.roads:
-	    if len(road)==9:
-		if road[-5]: city=road[-5]
-		else: city=road[-6]
+	    if len(road)==7:
+		if road[-4]: city=road[-4]
+		else: city=road[-5]
 		if not road[-2]: 
 		    print('Errors@roads with - '+str(road),file=f)
 		    continue
 		else: name=str(road[0])+'-'+str(city)+'-'+str(road[-1])+'-'+str(road[-2])
 	    else:
-		if road[-4]: city=road[-4]
-		else: city=road[-5]
+		if road[-3]: city=road[-3]
+		else: city=road[-4]
 		if not road[-1]: 
 		    print('Errors@roads with - '+str(road),file=f)
 		    continue
