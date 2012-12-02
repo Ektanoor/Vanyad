@@ -67,7 +67,7 @@ class VerifyLiveClassic:
 
     def send_msg(self):
 	max_time=70
-	netcon=3
+	netcon=5
 	final_msg='\n'
 	if time.time()-self.ready_time>max_time and self.msgs:
 	    for host in self.msgs: final_msg+=self.msgs[host]+'\n'

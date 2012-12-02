@@ -60,6 +60,10 @@ class ReadConf:
     script=None
     sms_zombies=None
 
+    mail_address=None
+    mail_server=None
+    mail_sender=None
+    
     contacts=[]
 
     def __init__(self):
@@ -117,6 +121,13 @@ class ReadConf:
 
 	if config.has_option('sms','zombies'): self.sms_zombies=config.get('sms', 'zombies')
 	else: self.sms_zombies=0
+
+	if config.has_option('mail','address'): self.mail_address=config.get('mail','address')
+	else: self.mail_address='email'
+	if config.has_option('mail','server'): self.mail_server=config.get('mail','server')
+	else: self.mail_server='relay'
+	if config.has_option('mail','sender'): self.mail_sender=config.get('mail','sender')
+	else: self.mail_sender='vanyad'
 
 
 

@@ -15,6 +15,7 @@
 # Boston, MA 02110-1301 USA.
 
 from xmpp import *
+from smtplib import SMTP
 from vanyad_nagcinga import *
 from vanyad_shelves import *
 
@@ -81,6 +82,25 @@ class SendSMS:
 	for contact in contacts:
 	    call([self.script,contact,msg],stdout=None,stderr=None)
 
+
+class SendMail:
+    config=None
+    smtp=None
+    def __init__(self):
+	self.config=ReadConf()
+	debuglevel = 0
+	self.smtp = SMTP()
+	self.smtp.set_debuglevel(debuglevel)
+
+    def send(self,msg,contacts):
+	self.smtp.connect(self.config.mail_server,25)
+	for contact in contacts:
+	    header=['From: '+self.config.mail_sender,'To: '+contact,'Subject: Vanyad - Alert']
+	    msg='\n'.join(header)+msg
+	    self.smtp.sendmail(self.config.mail_sender,contact,msg)
+	self.smtp.quit()
+
+
 class SendTxt:
     """A test class for messages
     """
@@ -95,15 +115,18 @@ class SendTxt:
 class SendMsg:
     jabber=None
     sms=None
+    mail=None
     txt=None
     xmpp_dict={}
     sms_dict={}
+    mail_dict={}
 
 
     def __init__(self):
 	addresses=['name']
 	xmpp_pos=0
 	sms_pos=0
+	mail_pos=0
 	pos=0
 	config=ReadConf()
 	self.live=ConnectLivestatus()
@@ -121,10 +144,17 @@ class SendMsg:
 	    pos+=1
 	    sms_pos=pos
 
+	if config.mail_address:
+	    self.mail=SendMail()
+	    addresses.append(config.mail_address)
+	    pos+=1
+	    mail_pos=pos
+
 	status=self.live.get_query('contacts',addresses,[])
 	for line in status:
 	    if xmpp_pos and line[xmpp_pos]: self.xmpp_dict[line[0]]=line[xmpp_pos]
 	    if sms_pos and line[sms_pos]: self.sms_dict[line[0]]=line[sms_pos]
+	    if mail_pos and line[mail_pos]: self.mail_dict[line[0]]=line[mail_pos]
 
     def send(self,msg,contacts,netcon):
 	msg='*Vanyad*\n'+msg
@@ -143,4 +173,9 @@ class SendMsg:
 	    for contact in contacts:
 		if contact in self.sms_dict: contacts2.append(self.sms_dict[contact])
 	    self.sms.send(msg,contacts2)
+	if self.mail and netcon>4:
+	    contacts2=[]
+	    for contact in contacts:
+		if contact in self.mail_dict: contacts2.append(self.mail_dict[contact])
+	    self.mail.send(msg,contacts2)
 

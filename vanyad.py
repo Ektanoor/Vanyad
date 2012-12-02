@@ -20,6 +20,7 @@ from vanyad_comms import *
 from vanyad_snmp import *
 from vanyad_grid import *
 from vanyad_host_logs import *
+import pwd, os
 
 class AlienNodes(TheGrid):
     """These nodes are hardware that somehow is "out of reach" for regular monitoring.
@@ -169,6 +170,8 @@ class TakeAction:
 
 
 if __name__ == '__main__':
+    uid = pwd.getpwnam('icinga')[2]
+    os.setuid(uid)
     guard=Blacklist()
     guard.ack_host()
     guard.ack_svc()
