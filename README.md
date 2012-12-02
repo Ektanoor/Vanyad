@@ -1,6 +1,8 @@
 Vanyad
 ======
 
+WARNING: script vanya_latlon.py transferred to its own project: Vanyad-Geo
+
 A Nagios/Icinga helper for large network installations (>1000 nodes, thousands of services).
 The objective is to create an entity responsible for a large number of purely mechanical tasks,
 usually made by tech-support personel, which are needed to attain a situational picture of the network.
