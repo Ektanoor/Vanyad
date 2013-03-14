@@ -74,7 +74,7 @@ class ReadConf:
 	if config.has_option('monitor','system'): self.system=config.get('monitor', 'system')
 	else: self.system='icinga'
 	if config.has_option('monitor','monitor_dir'): self.monitor_dir=config.get('monitor', 'monitor_dir')
-	else: self.monitor_dir='/var/lib/'+self.system
+	else: self.monitor_dir='/run/'+self.system
 	if config.has_option('monitor','socket_live'): self.socket_path=config.get('monitor', 'socket_live')
 	else: self.socket_live='unix:'+self.monitor_dir+'/rw/live'
 	if config.has_option('monitor','socket_command'): self.socket_command=config.get('monitor', 'socket_command')
@@ -139,7 +139,7 @@ class OpenShelves:
     sv=None
     working_shelve=None
     def __init__(self,shelve_name):
-	self.sv = shelve.open(shelve_name)
+	self.sv = shelve.open(shelve_name,flag='r')
 	self.working_shelve=shelve_name
 	if shelve_name=='blacklist':
 	    blacklists=('hosts','services')

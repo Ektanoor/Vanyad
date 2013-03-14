@@ -67,7 +67,7 @@ class VerifyLiveClassic:
 
     def send_msg(self):
 	max_time=70
-	netcon=5
+	netcon=4
 	final_msg='\n'
 	if time.time()-self.ready_time>max_time and self.msgs:
 	    for host in self.msgs: final_msg+=self.msgs[host]+'\n'
@@ -115,6 +115,11 @@ class GoDaemon:
 		else:
 		    syslog.syslog('Error: Daemon already launched')
 		    exit(1)
+	else:
+	    fh=open(pid_file, 'w')
+	    print(pid,file=fh)
+	    fh.close()
+
 
 	if os.path.exists(pipe_file): os.remove(pipe_file)
 	os.mkfifo(pipe_file)

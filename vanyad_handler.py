@@ -47,7 +47,7 @@ try:
 	pidf=open(pid_file,'r')
 	pid=int(pidf.readline())
     if not os.path.exists('/proc/'+str(pid)):
-#	os.system('./vanyad_daemon.py')
+	os.system('./vanyad_daemon.py')
 	MakeDetach()
 	time.sleep(0.5)
     msg=';'+args.host+';'+args.address+';'+args.state+';'+args.type+';'+args.attempt

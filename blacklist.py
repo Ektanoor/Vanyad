@@ -21,7 +21,7 @@ import argparse
 import livestatus
 from subprocess import call
 
-socket_path = 'unix:/var/lib/icinga/rw/live'
+socket_path = 'unix:/run/icinga/rw/live'
 
 try:
     parser = argparse.ArgumentParser(prog='blacklist',description='Blacklist constantly unstable devices.')
