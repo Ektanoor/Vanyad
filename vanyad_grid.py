@@ -26,19 +26,21 @@ class TheGrid(ConnectProlog):
     """
     config=None
     addresses={}
+    ack_list=[]
     sender=None
     blacklist=None
+
     def __init__(self):
 	self.config=ReadConf()
 	global p_base
 	self.sender=SendMsg()
 	ConnectProlog.__init__(self)
-	if not p_base:
-	    p_base=1
-	    self.blacklist=OpenShelves('blacklist')
-	    status=self.get_query('hosts',('host_name','address','custom_variables','state','parents'),())
-	    for host_name, address, custom_variables, state, parents in status:
-		self.addresses[host_name]=address
+	self.blacklist=OpenShelves('blacklist')
+	status=self.get_query('hosts',('host_name','address','custom_variables','state','parents','acknowledged'),())
+	for host_name,address,custom_variables,state,parents,acknowledged in status:
+	    self.addresses[host_name]=address
+	    if acknowledged==1: self.ack_list.append(host_name)
+	    if not p_base:
 		if 'CONNECTED' in custom_variables:
 		    self.prolog.assertz("ports('"+host_name+"','"+custom_variables['CONNECTED']+"')")
 		if state==0: s_state='UP'
@@ -47,6 +49,7 @@ class TheGrid(ConnectProlog):
 		self.prolog.assertz("state('"+host_name+"','"+s_state+"')")
 		for parent in parents:
 		    self.prolog.assertz("parent('"+parent+"','"+host_name+"')")
+	p_base=1
 
     def GridDamage(self):
 	is_block=1
@@ -55,7 +58,7 @@ class TheGrid(ConnectProlog):
 	netcon=3
 	state_list=list(self.prolog.query("state(X,'DOWN')"))
 	for host in state_list:
-	    if host['X'] not in self.blacklist.lsts:
+	    if host['X'] not in self.blacklist.lsts and host['X'] not in self.ack_list:
 		blocks=0
 		affects=0
 		warning="Host "+host['X']+" is DOWN"
@@ -82,7 +85,7 @@ class TheGrid(ConnectProlog):
 	netcon=2
 	paradoxes=list(self.prolog.query("paradoxes(X,Y)"))
 	for paradox in paradoxes:
-	    if paradox['X'] not in self.blacklist.lsts:
+	    if paradox['X'] not in self.blacklist.lsts and paradox['X'] not in self.ack_list:
 		warning='Host '+paradox['Y']+' is UP while parent '+paradox['X']+' is DOWN/UNREACHABLE!'
 		warn_lines.append(warning)
 	if warn_lines:
